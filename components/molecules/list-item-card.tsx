@@ -6,6 +6,7 @@ type Props = {
   metaValue: string;
   amount: number;
   href: string;
+  sign?: "positive" | "negative";
 };
 
 const chfFormatter = new Intl.NumberFormat("de-CH", {
@@ -13,11 +14,19 @@ const chfFormatter = new Intl.NumberFormat("de-CH", {
   maximumFractionDigits: 2,
 });
 
-function formatChf(amount: number) {
-  return `CHF ${chfFormatter.format(amount)}`;
+function formatChf(amount: number, sign?: "positive" | "negative") {
+  const prefix = sign === "positive" ? "+ " : sign === "negative" ? "- " : "";
+  return `${prefix}CHF ${chfFormatter.format(amount)}`;
 }
 
-export function ListItemCard({ name, metaLabel, metaValue, amount, href }: Props) {
+export function ListItemCard({
+  name,
+  metaLabel,
+  metaValue,
+  amount,
+  href,
+  sign,
+}: Props) {
   return (
     <Link
       href={href}
@@ -26,7 +35,9 @@ export function ListItemCard({ name, metaLabel, metaValue, amount, href }: Props
       <article>
         <div className="flex flex-wrap items-start justify-between gap-2">
           <h3 className="text-base font-semibold text-foreground">{name}</h3>
-          <p className="text-base font-semibold tabular-nums">{formatChf(amount)}</p>
+          <p className="text-base font-semibold tabular-nums">
+            {formatChf(amount, sign)}
+          </p>
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
           {metaLabel}:{" "}
