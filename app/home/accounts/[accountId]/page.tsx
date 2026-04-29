@@ -60,7 +60,12 @@ export default async function AccountDetailPage({ params }: Props) {
                   metaLabel="Execution date"
                   metaValue={order.executionDate}
                   amount={order.amount}
-                  sign="negative"
+                  sign={
+                    order.destinationRef.entityType === "account" &&
+                    order.destinationRef.entityId === accountId
+                      ? "positive"
+                      : "negative"
+                  }
                 />
               ))
             ) : (

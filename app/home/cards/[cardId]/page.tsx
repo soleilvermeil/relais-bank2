@@ -60,6 +60,12 @@ export default async function CardDetailPage({ params }: Props) {
                   metaLabel="Execution date"
                   metaValue={order.executionDate}
                   amount={order.amount}
+                  sign={
+                    order.destinationRef.entityType === "card" &&
+                    order.destinationRef.entityId === cardId
+                      ? "positive"
+                      : "negative"
+                  }
                 />
               ))
             ) : (
