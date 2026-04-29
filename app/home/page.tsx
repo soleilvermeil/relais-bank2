@@ -30,6 +30,7 @@ export default async function HomePage() {
             {accounts.map((account) => (
               <ListItemCard
                 key={account.id}
+                href="."
                 name={account.name}
                 metaLabel="IBAN"
                 metaValue={account.iban ?? "No IBAN available"}
@@ -48,6 +49,7 @@ export default async function HomePage() {
             {creditCards.map((card) => (
               <ListItemCard
                 key={card.id}
+                href="."
                 name={card.name}
                 metaLabel="Card number"
                 metaValue={`XXXX XXXX XXXX ${card.last4}`}

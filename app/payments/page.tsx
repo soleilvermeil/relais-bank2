@@ -63,6 +63,7 @@ export default async function PaymentsPage() {
             {pendingOrders.map((order) => (
               <ListItemCard
                 key={order.id}
+                href="."
                 name={order.label}
                 metaLabel="Execution date"
                 metaValue={order.executionDate}
@@ -81,6 +82,7 @@ export default async function PaymentsPage() {
             {standingOrders.map((order) => (
               <ListItemCard
                 key={order.id}
+                href="."
                 name={order.label}
                 metaLabel={`${order.cadence} - next execution`}
                 metaValue={order.nextExecutionDate}
