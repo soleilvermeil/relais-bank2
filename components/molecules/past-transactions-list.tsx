@@ -1,3 +1,9 @@
+import {
+  BanknoteArrowDown,
+  BanknoteArrowUp,
+  SquareArrowRightExit,
+  SquareArrowRightEnter,
+} from "lucide-react";
 import type { PastTransaction } from "@/data/banking-mock";
 
 type Props = {
@@ -12,6 +18,17 @@ const chfFormatter = new Intl.NumberFormat("de-CH", {
 function formatSignedChf(amount: number, direction: "incoming" | "outgoing") {
   const sign = direction === "incoming" ? "+" : "-";
   return `${sign} CHF ${chfFormatter.format(amount)}`;
+}
+
+function getIconForTransaction(transaction: PastTransaction) {
+  if (transaction.iconKind === "account_transfer") {
+    return transaction.direction === "incoming"
+      ? SquareArrowRightEnter
+      : SquareArrowRightExit;
+  }
+  return transaction.direction === "incoming"
+    ? BanknoteArrowDown
+    : BanknoteArrowUp;
 }
 
 function groupByDate(transactions: PastTransaction[]) {
@@ -47,9 +64,17 @@ export function PastTransactionsList({ transactions }: Props) {
             {items.map((transaction) => (
               <article key={transaction.id} className="py-1">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm font-medium text-foreground">
-                    {transaction.label}
-                  </p>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-foreground">
+                      {(() => {
+                        const Icon = getIconForTransaction(transaction);
+                        return <Icon className="h-4 w-4" aria-hidden />;
+                      })()}
+                    </span>
+                    <p className="text-sm font-medium text-foreground">
+                      {transaction.label}
+                    </p>
+                  </div>
                   <p
                     className={`text-sm font-semibold tabular-nums ${
                       transaction.direction === "incoming"

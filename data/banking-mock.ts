@@ -52,6 +52,7 @@ type PostedTransactionRecord = MoneyMovementBase & {
 };
 
 export type TransactionDirection = "incoming" | "outgoing";
+export type TransactionIconKind = "account_transfer" | "default";
 
 export type PendingOrder = {
   id: string;
@@ -78,6 +79,7 @@ export type PastTransaction = {
   label: string;
   amount: number;
   direction: TransactionDirection;
+  iconKind: TransactionIconKind;
   sourceRef: EntityRef;
   destinationRef: EntityRef;
 };
@@ -259,6 +261,16 @@ function getDirection(
   return "outgoing";
 }
 
+function getTransactionIconKind(
+  sourceRef: EntityRef,
+  destinationRef: EntityRef,
+): TransactionIconKind {
+  if (sourceRef.entityType === "account" && destinationRef.entityType === "account") {
+    return "account_transfer";
+  }
+  return "default";
+}
+
 function toPendingOrder(
   record: PendingOrderRecord,
   perspectiveRef: EntityRef | null = null,
@@ -342,6 +354,7 @@ export function getPastTransactionsForSource(
         record.sourceRef,
         record.destinationRef,
       ),
+      iconKind: getTransactionIconKind(record.sourceRef, record.destinationRef),
       sourceRef: record.sourceRef,
       destinationRef: record.destinationRef,
     }));
