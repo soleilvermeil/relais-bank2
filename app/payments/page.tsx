@@ -1,9 +1,14 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Badge } from "@/components/atoms/badge";
 import { Container } from "@/components/atoms/container";
 import { SectionTitle } from "@/components/atoms/section-title";
 import { ListItemCard } from "@/components/molecules/list-item-card";
-import { pendingOrders, standingOrders } from "@/data/banking-mock";
+import {
+  getConfirmedOperations,
+  getPendingOrders,
+  getStandingOrders,
+} from "@/data/banking-mock";
 import { isAuthenticated } from "@/lib/auth";
 
 const paymentActions = [
@@ -28,6 +33,11 @@ export default async function PaymentsPage() {
   if (!(await isAuthenticated())) {
     redirect("/login");
   }
+  const [operations, pendingOrders, standingOrders] = await Promise.all([
+    getConfirmedOperations(),
+    getPendingOrders(),
+    getStandingOrders(),
+  ]);
 
   return (
     <Container>
@@ -49,10 +59,62 @@ export default async function PaymentsPage() {
               >
                 <h3 className="text-base font-semibold">{action.title}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">{action.description}</p>
+                {action.id === "pay" ? (
+                  <Link
+                    href="/payments/pay"
+                    className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+                  >
+                    Open form
+                  </Link>
+                ) : null}
+                {action.id === "transfer" ? (
+                  <Link
+                    href="/payments/transfer"
+                    className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+                  >
+                    Open form
+                  </Link>
+                ) : null}
               </article>
             ))}
           </div>
         </section>
+
+        {/*
+        <section className="rounded-2xl border border-card-border bg-card p-5 shadow-sm sm:p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <SectionTitle>Confirmed operations</SectionTitle>
+            <Badge>{operations.length}</Badge>
+          </div>
+          <div className="space-y-3">
+            {operations.length > 0 ? (
+              operations.map((operation) => (
+                <article
+                  key={operation.id}
+                  className="rounded-xl border border-card-border bg-background p-4"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <h3 className="text-base font-semibold uppercase text-foreground">
+                      {operation.type}
+                    </h3>
+                    <p className="text-base font-semibold tabular-nums">
+                      CHF {operation.amount.toFixed(2)}
+                    </p>
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {operation.sourceRef.entityType}:{operation.sourceRef.entityId} {"→"}{" "}
+                    {operation.destinationRef.entityType}:{operation.destinationRef.entityId}
+                  </p>
+                </article>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No confirmed operations yet.
+              </p>
+            )}
+          </div>
+        </section>
+        */}
 
         <section className="rounded-2xl border border-card-border bg-card p-5 shadow-sm sm:p-6">
           <div className="mb-4 flex items-center justify-between">

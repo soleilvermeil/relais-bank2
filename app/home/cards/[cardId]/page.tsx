@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Button } from "@/components/atoms/button";
 import { Container } from "@/components/atoms/container";
@@ -26,8 +27,10 @@ export default async function CardDetailPage({ params }: Props) {
     notFound();
   }
 
-  const pendingOrders = getPendingOrdersUntilNextMonth("card", cardId);
-  const transactions = getPastTransactionsForSource("card", cardId);
+  const [pendingOrders, transactions] = await Promise.all([
+    getPendingOrdersUntilNextMonth("card", cardId),
+    getPastTransactionsForSource("card", cardId),
+  ]);
 
   return (
     <Container>
@@ -41,7 +44,12 @@ export default async function CardDetailPage({ params }: Props) {
 
         <section className="rounded-2xl border border-card-border bg-card p-5 shadow-sm sm:p-6">
           <div className="flex flex-wrap gap-3">
-            <Button type="button">Make payment</Button>
+            <Link
+              href={`/payments/pay?source=${encodeURIComponent(`card:${cardId}`)}`}
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-5 py-2.5 text-base font-medium text-primary-foreground"
+            >
+              Make payment
+            </Link>
             <Button type="button" variant="secondary">
               Search transactions
             </Button>

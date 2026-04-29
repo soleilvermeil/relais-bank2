@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { logout } from "@/app/actions/auth";
+import { resetPaymentCookies } from "@/app/actions/payments";
 import { Button } from "@/components/atoms/button";
 
 type Props = {
@@ -7,6 +10,15 @@ type Props = {
 };
 
 export function SiteHeader({ isLoggedIn }: Props) {
+  function confirmReset(event: React.FormEvent<HTMLFormElement>) {
+    const accepted = window.confirm(
+      "Reset all payment cookies and return to base state?",
+    );
+    if (!accepted) {
+      event.preventDefault();
+    }
+  }
+
   return (
     <header className="sticky top-0 z-40 border-b border-card-border bg-background/90 backdrop-blur-md print:hidden">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
@@ -36,11 +48,18 @@ export function SiteHeader({ isLoggedIn }: Props) {
         </div>
 
         {isLoggedIn ? (
-          <form action={logout}>
-            <Button type="submit" variant="secondary">
-              Log out
-            </Button>
-          </form>
+          <div className="flex items-center gap-2">
+            <form action={resetPaymentCookies} onSubmit={confirmReset}>
+              <Button type="submit" variant="secondary">
+                Reset cookies
+              </Button>
+            </form>
+            <form action={logout}>
+              <Button type="submit" variant="secondary">
+                Log out
+              </Button>
+            </form>
+          </div>
         ) : null}
       </div>
     </header>

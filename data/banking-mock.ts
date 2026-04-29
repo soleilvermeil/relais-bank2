@@ -1,3 +1,8 @@
+import {
+  readPaymentOperationDeltas,
+  type PaymentOperationDelta,
+} from "@/lib/payment-cookies";
+
 export type Account = {
   id: string;
   name: string;
@@ -38,16 +43,16 @@ type MoneyMovementBase = {
   label?: string;
 };
 
-type PendingOrderRecord = MoneyMovementBase & {
+export type PendingOrderRecord = MoneyMovementBase & {
   executionDate: string;
 };
 
-type StandingOrderRecord = MoneyMovementBase & {
+export type StandingOrderRecord = MoneyMovementBase & {
   cadence: string;
   nextExecutionDate: string;
 };
 
-type PostedTransactionRecord = MoneyMovementBase & {
+export type PostedTransactionRecord = MoneyMovementBase & {
   bookingDate: string;
 };
 
@@ -71,6 +76,18 @@ export type StandingOrder = {
   amount: number;
   sourceRef: EntityRef;
   destinationRef: EntityRef;
+};
+
+export type ConfirmedOperation = {
+  id: string;
+  type: "pay" | "transfer";
+  createdAtIso: string;
+  sourceRef: EntityRef;
+  destinationRef: EntityRef;
+  amount: number;
+  currency: "CHF";
+  executionDate: string;
+  reference: string;
 };
 
 export type PastTransaction = {
@@ -107,7 +124,7 @@ const externalEntities: ExternalEntity[] = [
   { id: "hotel-lac", type: "merchant", name: "Hotel du Lac" },
 ];
 
-const pendingOrderRecords: PendingOrderRecord[] = [
+const basePendingOrderRecords: PendingOrderRecord[] = [
   {
     id: "pending-1",
     amount: 1750,
@@ -131,7 +148,7 @@ const pendingOrderRecords: PendingOrderRecord[] = [
   },
 ];
 
-const standingOrderRecords: StandingOrderRecord[] = [
+const baseStandingOrderRecords: StandingOrderRecord[] = [
   {
     id: "standing-1",
     amount: 500,
@@ -150,7 +167,7 @@ const standingOrderRecords: StandingOrderRecord[] = [
   },
 ];
 
-const postedTransactionRecords: PostedTransactionRecord[] = [
+const basePostedTransactionRecords: PostedTransactionRecord[] = [
   {
     id: "tx-1",
     bookingDate: "27.04.2026",
@@ -208,6 +225,51 @@ const postedTransactionRecords: PostedTransactionRecord[] = [
     destinationRef: { entityType: "merchant", entityId: "cff" },
   },
 ];
+
+function toConfirmedOperation(
+  delta: PaymentOperationDelta,
+): ConfirmedOperation {
+  return {
+    id: delta.id,
+    type: delta.type,
+    createdAtIso: delta.createdAtIso,
+    sourceRef: delta.sourceRef,
+    destinationRef: delta.destinationRef,
+    amount: delta.amount,
+    currency: delta.currency,
+    executionDate: delta.executionDate,
+    reference: delta.reference,
+  };
+}
+
+function toPendingRecordFromOperation(
+  operation: ConfirmedOperation,
+): PendingOrderRecord {
+  return {
+    id: `pending-${operation.id}`,
+    amount: operation.amount,
+    executionDate: operation.executionDate,
+    sourceRef: operation.sourceRef,
+    destinationRef: operation.destinationRef,
+  };
+}
+
+function toPostedRecordFromOperation(
+  operation: ConfirmedOperation,
+): PostedTransactionRecord {
+  return {
+    id: `posted-${operation.id}`,
+    bookingDate: operation.executionDate,
+    amount: operation.amount,
+    sourceRef: operation.sourceRef,
+    destinationRef: operation.destinationRef,
+  };
+}
+
+async function getConfirmedOperationState() {
+  const deltas = await readPaymentOperationDeltas();
+  return deltas.map(toConfirmedOperation);
+}
 
 function parseSwissDate(value: string) {
   const [day, month, year] = value.split(".").map(Number);
@@ -304,22 +366,31 @@ function toStandingOrder(
   };
 }
 
-export const pendingOrders: PendingOrder[] = pendingOrderRecords.map((record) =>
-  toPendingOrder(record),
-);
+export async function getPendingOrders(): Promise<PendingOrder[]> {
+  const operations = await getConfirmedOperationState();
+  const operationPending = operations.map(toPendingRecordFromOperation);
+  return [...operationPending, ...basePendingOrderRecords].map((record) =>
+    toPendingOrder(record),
+  );
+}
 
-export const standingOrders: StandingOrder[] = standingOrderRecords.map((record) =>
-  toStandingOrder(record),
-);
+export async function getStandingOrders(): Promise<StandingOrder[]> {
+  return baseStandingOrderRecords.map((record) => toStandingOrder(record));
+}
 
-export function getPendingOrdersUntilNextMonth(
+export async function getPendingOrdersUntilNextMonth(
   sourceType: DetailSourceType,
   sourceId: string,
   referenceDate: Date = new Date(),
 ) {
+  const operations = await getConfirmedOperationState();
+  const mergedPending = [
+    ...operations.map(toPendingRecordFromOperation),
+    ...basePendingOrderRecords,
+  ];
   const perspectiveRef: EntityRef = { entityType: sourceType, entityId: sourceId };
   const cutoffDate = getEndOfNextMonth(referenceDate);
-  return pendingOrderRecords
+  return mergedPending
     .filter((order) => {
       const isRelated =
         refsEqual(order.sourceRef, perspectiveRef) ||
@@ -329,12 +400,17 @@ export function getPendingOrdersUntilNextMonth(
     .map((order) => toPendingOrder(order, perspectiveRef));
 }
 
-export function getPastTransactionsForSource(
+export async function getPastTransactionsForSource(
   sourceType: DetailSourceType,
   sourceId: string,
-): PastTransaction[] {
+): Promise<PastTransaction[]> {
+  const operations = await getConfirmedOperationState();
+  const mergedPosted = [
+    ...operations.map(toPostedRecordFromOperation),
+    ...basePostedTransactionRecords,
+  ];
   const perspectiveRef: EntityRef = { entityType: sourceType, entityId: sourceId };
-  return postedTransactionRecords
+  return mergedPosted
     .filter(
       (record) =>
         refsEqual(record.sourceRef, perspectiveRef) ||
@@ -358,4 +434,8 @@ export function getPastTransactionsForSource(
       sourceRef: record.sourceRef,
       destinationRef: record.destinationRef,
     }));
+}
+
+export async function getConfirmedOperations() {
+  return getConfirmedOperationState();
 }
