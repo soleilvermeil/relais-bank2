@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Badge } from "@/components/atoms/badge";
 import { Container } from "@/components/atoms/container";
 import { SectionTitle } from "@/components/atoms/section-title";
+import { ListItemCard } from "@/components/molecules/list-item-card";
 import { pendingOrders, standingOrders } from "@/data/banking-mock";
 import { isAuthenticated } from "@/lib/auth";
 
@@ -60,21 +61,13 @@ export default async function PaymentsPage() {
           </div>
           <div className="space-y-3">
             {pendingOrders.map((order) => (
-              <article
+              <ListItemCard
                 key={order.id}
-                className="rounded-xl border border-card-border bg-background p-4"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <h3 className="text-base font-semibold">{order.label}</h3>
-                  <p className="text-base font-semibold tabular-nums">{order.amountChf}</p>
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Execution date:{" "}
-                  <span className="font-medium text-foreground">
-                    {order.executionDate}
-                  </span>
-                </p>
-              </article>
+                name={order.label}
+                metaLabel="Execution date"
+                metaValue={order.executionDate}
+                amount={order.amount}
+              />
             ))}
           </div>
         </section>
@@ -86,21 +79,13 @@ export default async function PaymentsPage() {
           </div>
           <div className="space-y-3">
             {standingOrders.map((order) => (
-              <article
+              <ListItemCard
                 key={order.id}
-                className="rounded-xl border border-card-border bg-background p-4"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <h3 className="text-base font-semibold">{order.label}</h3>
-                  <p className="text-base font-semibold tabular-nums">{order.amountChf}</p>
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {order.cadence} - next execution:{" "}
-                  <span className="font-medium text-foreground">
-                    {order.nextExecutionDate}
-                  </span>
-                </p>
-              </article>
+                name={order.label}
+                metaLabel={`${order.cadence} - next execution`}
+                metaValue={order.nextExecutionDate}
+                amount={order.amount}
+              />
             ))}
           </div>
         </section>

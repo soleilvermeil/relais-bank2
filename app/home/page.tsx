@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Badge } from "@/components/atoms/badge";
 import { Container } from "@/components/atoms/container";
 import { SectionTitle } from "@/components/atoms/section-title";
+import { ListItemCard } from "@/components/molecules/list-item-card";
 import { accounts, creditCards } from "@/data/banking-mock";
 import { isAuthenticated } from "@/lib/auth";
 
@@ -27,26 +28,13 @@ export default async function HomePage() {
           </div>
           <div className="space-y-4">
             {accounts.map((account) => (
-              <article
+              <ListItemCard
                 key={account.id}
-                className="rounded-xl border border-card-border bg-background p-4"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <h3 className="text-base font-semibold text-foreground">
-                    {account.name}
-                  </h3>
-                  <p className="text-base font-semibold tabular-nums">
-                    {account.balanceChf}
-                  </p>
-                </div>
-                {account.iban ? (
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    IBAN: <span className="font-medium text-foreground">{account.iban}</span>
-                  </p>
-                ) : (
-                  <p className="mt-2 text-sm text-muted-foreground">No IBAN available</p>
-                )}
-              </article>
+                name={account.name}
+                metaLabel="IBAN"
+                metaValue={account.iban ?? "No IBAN available"}
+                amount={account.balance}
+              />
             ))}
           </div>
         </section>
@@ -58,23 +46,13 @@ export default async function HomePage() {
           </div>
           <div className="space-y-4">
             {creditCards.map((card) => (
-              <article
+              <ListItemCard
                 key={card.id}
-                className="rounded-xl border border-card-border bg-background p-4"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <h3 className="text-base font-semibold text-foreground">
-                    {card.name}
-                  </h3>
-                  <p className="text-base font-semibold tabular-nums">{card.amountChf}</p>
-                </div>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Card number:{" "}
-                  <span className="font-medium text-foreground tabular-nums">
-                    XXXX XXXX XXXX {card.last4}
-                  </span>
-                </p>
-              </article>
+                name={card.name}
+                metaLabel="Card number"
+                metaValue={`XXXX XXXX XXXX ${card.last4}`}
+                amount={card.amount}
+              />
             ))}
           </div>
         </section>
