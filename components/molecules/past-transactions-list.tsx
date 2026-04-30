@@ -1,5 +1,3 @@
-"use client";
-
 import {
   BanknoteArrowDown,
   BanknoteArrowUp,
@@ -8,10 +6,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { TFunction } from "i18next";
-import { useTranslation } from "react-i18next";
-import { accounts } from "@/data/banking-mock";
 import type { PastTransaction } from "@/data/banking-mock";
-import { getLocalizedAccountNameById } from "@/lib/i18n/account-names";
+import { getServerT } from "@/lib/i18n/server";
 
 type Props = {
   transactions: PastTransaction[];
@@ -66,6 +62,12 @@ function getTransactionMeta(transaction: PastTransaction, t: TFunction) {
   return parts.join(" - ");
 }
 
+const accountNameKeyById: Record<string, string> = {
+  checking: "accountNames.checking",
+  savings: "accountNames.savings",
+  "retirement-3a": "accountNames.retirement3a",
+};
+
 function getLocalizedTransactionLabel(transaction: PastTransaction, t: TFunction) {
   const counterpartyRef =
     transaction.direction === "incoming" ? transaction.sourceRef : transaction.destinationRef;
@@ -74,16 +76,12 @@ function getLocalizedTransactionLabel(transaction: PastTransaction, t: TFunction
     return transaction.label;
   }
 
-  const account = accounts.find((item) => item.id === counterpartyRef.entityId);
-  if (!account) {
-    return transaction.label;
-  }
-
-  return getLocalizedAccountNameById(account.id, t, transaction.label);
+  const key = accountNameKeyById[counterpartyRef.entityId];
+  return key ? t(key) : transaction.label;
 }
 
-export function PastTransactionsList({ transactions }: Props) {
-  const { t } = useTranslation();
+export async function PastTransactionsList({ transactions }: Props) {
+  const { t } = await getServerT();
   const groups = groupByDate(transactions);
 
   if (groups.length === 0) {
