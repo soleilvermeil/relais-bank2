@@ -33,9 +33,11 @@ export function ListItemCard({
       className="block cursor-pointer rounded-xl border border-card-border bg-background p-4 hover:bg-muted"
     >
       <article>
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <h3 className="text-base font-semibold text-foreground">{name}</h3>
-          <p className="text-base font-semibold tabular-nums">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-2">
+          <h3 className="min-w-0 text-base font-semibold text-foreground break-words">
+            {name}
+          </h3>
+          <p className="whitespace-nowrap text-right text-base font-semibold tabular-nums">
             {formatChf(amount, sign)}
           </p>
         </div>
