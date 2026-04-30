@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { HandCoins, QrCode, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/atoms/badge";
 import { Container } from "@/components/atoms/container";
 import { SectionTitle } from "@/components/atoms/section-title";
@@ -16,16 +17,22 @@ const paymentActions = [
     id: "scan",
     title: "Scan",
     description: "Scan a QR code invoice",
+    href: undefined,
+    icon: QrCode,
   },
   {
     id: "pay",
     title: "Pay",
     description: "Create a one-time payment",
+    href: "/payments/pay",
+    icon: HandCoins,
   },
   {
     id: "transfer",
     title: "Transfer",
     description: "Transfer between your accounts",
+    href: "/payments/transfer",
+    icon: RefreshCw,
   },
 ];
 
@@ -55,25 +62,36 @@ export default async function PaymentsPage() {
             {paymentActions.map((action) => (
               <article
                 key={action.id}
-                className="rounded-xl border border-card-border bg-background p-4"
+                className="rounded-xl border border-card-border bg-background"
               >
-                <h3 className="text-base font-semibold">{action.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{action.description}</p>
-                {action.id === "pay" ? (
+                {action.href ? (
                   <Link
-                    href="/payments/pay"
-                    className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+                    href={action.href}
+                    className="flex cursor-pointer items-center gap-3 rounded-xl p-4 transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
-                    Open form
+                    <action.icon
+                      aria-hidden="true"
+                      size={20}
+                      className="shrink-0 text-primary"
+                    />
+                    <div>
+                      <h3 className="text-base font-semibold">{action.title}</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">{action.description}</p>
+                    </div>
                   </Link>
                 ) : null}
-                {action.id === "transfer" ? (
-                  <Link
-                    href="/payments/transfer"
-                    className="mt-4 inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-                  >
-                    Open form
-                  </Link>
+                {!action.href ? (
+                  <div className="flex items-center gap-3 p-4">
+                    <action.icon
+                      aria-hidden="true"
+                      size={20}
+                      className="shrink-0 text-primary"
+                    />
+                    <div>
+                      <h3 className="text-base font-semibold">{action.title}</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">{action.description}</p>
+                    </div>
+                  </div>
                 ) : null}
               </article>
             ))}
