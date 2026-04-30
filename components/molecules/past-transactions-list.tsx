@@ -7,7 +7,8 @@ import {
   SquareArrowRightEnter,
 } from "lucide-react";
 import Link from "next/link";
-import { useTranslation, type TFunction } from "react-i18next";
+import type { TFunction } from "i18next";
+import { useTranslation } from "react-i18next";
 import type { PastTransaction } from "@/data/banking-mock";
 
 type Props = {

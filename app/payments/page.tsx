@@ -6,7 +6,6 @@ import { Container } from "@/components/atoms/container";
 import { SectionTitle } from "@/components/atoms/section-title";
 import { ListItemCard } from "@/components/molecules/list-item-card";
 import {
-  getConfirmedOperations,
   getPendingOrders,
   getStandingOrders,
 } from "@/data/banking-mock";
@@ -43,8 +42,7 @@ export default async function PaymentsPage() {
     },
   ];
 
-  const [operations, pendingOrders, standingOrders] = await Promise.all([
-    getConfirmedOperations(),
+  const [pendingOrders, standingOrders] = await Promise.all([
     getPendingOrders(),
     getStandingOrders(),
   ]);

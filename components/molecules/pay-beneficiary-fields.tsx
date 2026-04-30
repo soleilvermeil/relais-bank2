@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Label } from "@/components/atoms/label";
 
@@ -64,7 +64,7 @@ export function PayBeneficiaryFields({
   const ibanInputRef = useRef<HTMLInputElement>(null);
   const bicInputRef = useRef<HTMLInputElement>(null);
 
-  function getIbanError(value: string) {
+  const getIbanError = useCallback((value: string) => {
     const iban = normalizeIban(value);
     if (!iban) {
       return t("payBeneficiary.ibanRequired");
@@ -73,9 +73,9 @@ export function PayBeneficiaryFields({
       return t("payBeneficiary.ibanInvalid");
     }
     return "";
-  }
+  }, [t]);
 
-  function getBicError(value: string, isInternational: boolean) {
+  const getBicError = useCallback((value: string, isInternational: boolean) => {
     const bic = normalizeBic(value);
     if (!isInternational) {
       return "";
@@ -87,9 +87,9 @@ export function PayBeneficiaryFields({
       return t("payBeneficiary.bicInvalid");
     }
     return "";
-  }
+  }, [t]);
 
-  function validateFields() {
+  const validateFields = useCallback(() => {
     const nextIbanError = getIbanError(beneficiaryIban);
     const nextBicError = getBicError(
       beneficiaryBic,
@@ -98,7 +98,7 @@ export function PayBeneficiaryFields({
     setIbanError(nextIbanError);
     setBicError(nextBicError);
     return !nextIbanError && !nextBicError;
-  }
+  }, [beneficiaryBic, beneficiaryIban, getBicError, getIbanError, paymentType]);
 
   useEffect(() => {
     const form = ibanInputRef.current?.form;
@@ -119,7 +119,7 @@ export function PayBeneficiaryFields({
 
     form.addEventListener("submit", handleSubmit);
     return () => form.removeEventListener("submit", handleSubmit);
-  }, [beneficiaryBic, beneficiaryIban, paymentType]);
+  }, [beneficiaryBic, beneficiaryIban, getIbanError, validateFields, paymentType]);
 
   return (
     <div className="space-y-5">
