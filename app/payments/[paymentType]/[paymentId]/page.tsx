@@ -4,6 +4,7 @@ import { Container } from "@/components/atoms/container";
 import { SectionTitle } from "@/components/atoms/section-title";
 import { getPaymentDetail } from "@/data/banking-mock";
 import { isAuthenticated } from "@/lib/auth";
+import { getServerT } from "@/lib/i18n/server";
 
 type Props = {
   params: Promise<{
@@ -21,6 +22,7 @@ export default async function PaymentDetailPage({ params }: Props) {
   if (!(await isAuthenticated())) {
     redirect("/login");
   }
+  const { t } = await getServerT();
 
   const { paymentType, paymentId } = await params;
   if (
@@ -41,78 +43,80 @@ export default async function PaymentDetailPage({ params }: Props) {
     <Container>
       <main id="main-content" className="space-y-8">
         <header className="space-y-2">
-          <SectionTitle as="h1">Payment details</SectionTitle>
+          <SectionTitle as="h1">{t("paymentDetail.title")}</SectionTitle>
           <p className="text-sm text-muted-foreground">
-            Verify all information for this payment order.
+            {t("paymentDetail.subtitle")}
           </p>
         </header>
 
         <section className="rounded-2xl border border-card-border bg-card p-5 shadow-sm sm:p-6">
           <dl className="grid gap-4 sm:grid-cols-2">
             <div>
-              <dt className="text-sm text-muted-foreground">Payment type</dt>
+              <dt className="text-sm text-muted-foreground">{t("paymentDetail.paymentType")}</dt>
               <dd className="font-medium">
                 {payment.paymentType === "pending"
-                  ? "Pending order"
+                  ? t("paymentDetail.pendingOrder")
                   : payment.paymentType === "standing"
-                    ? "Standing order"
-                    : "Posted transaction"}
+                    ? t("paymentDetail.standingOrder")
+                    : t("paymentDetail.postedTransaction")}
               </dd>
             </div>
             <div>
-              <dt className="text-sm text-muted-foreground">Amount</dt>
+              <dt className="text-sm text-muted-foreground">{t("common.amount")}</dt>
               <dd className="font-medium">CHF {chfFormatter.format(payment.amount)}</dd>
             </div>
             <div>
-              <dt className="text-sm text-muted-foreground">Source</dt>
+              <dt className="text-sm text-muted-foreground">{t("common.source")}</dt>
               <dd className="font-medium">{payment.sourceLabel}</dd>
             </div>
             <div>
-              <dt className="text-sm text-muted-foreground">Destination</dt>
+              <dt className="text-sm text-muted-foreground">{t("paymentDetail.destination")}</dt>
               <dd className="font-medium">{payment.destinationLabel}</dd>
             </div>
             {payment.destinationIban ? (
               <div>
-                <dt className="text-sm text-muted-foreground">Destination IBAN</dt>
+                <dt className="text-sm text-muted-foreground">{t("paymentDetail.destinationIban")}</dt>
                 <dd className="font-medium">{payment.destinationIban}</dd>
               </div>
             ) : null}
             {payment.reference ? (
               <div>
-                <dt className="text-sm text-muted-foreground">Reference</dt>
+                <dt className="text-sm text-muted-foreground">{t("paymentDetail.reference")}</dt>
                 <dd className="font-medium">{payment.reference}</dd>
               </div>
             ) : null}
             {payment.paymentType === "posted" && payment.shopAddress ? (
               <div>
-                <dt className="text-sm text-muted-foreground">Shop address</dt>
+                <dt className="text-sm text-muted-foreground">{t("paymentDetail.shopAddress")}</dt>
                 <dd className="font-medium">{payment.shopAddress}</dd>
               </div>
             ) : null}
             {payment.paymentType === "posted" && payment.debitCardMaskedNumber ? (
               <div>
-                <dt className="text-sm text-muted-foreground">Debit card</dt>
+                <dt className="text-sm text-muted-foreground">{t("paymentDetail.debitCard")}</dt>
                 <dd className="font-medium">{payment.debitCardMaskedNumber}</dd>
               </div>
             ) : null}
             {payment.paymentType === "pending" ? (
               <div>
-                <dt className="text-sm text-muted-foreground">Execution date</dt>
+                <dt className="text-sm text-muted-foreground">{t("common.executionDate")}</dt>
                 <dd className="font-medium">{payment.executionDate}</dd>
               </div>
             ) : payment.paymentType === "posted" ? (
               <div>
-                <dt className="text-sm text-muted-foreground">Booking date</dt>
+                <dt className="text-sm text-muted-foreground">{t("paymentDetail.bookingDate")}</dt>
                 <dd className="font-medium">{payment.bookingDate}</dd>
               </div>
             ) : (
               <>
                 <div>
-                  <dt className="text-sm text-muted-foreground">Cadence</dt>
-                  <dd className="font-medium">{payment.cadence}</dd>
+                  <dt className="text-sm text-muted-foreground">{t("paymentDetail.cadence")}</dt>
+                  <dd className="font-medium">
+                    {payment.cadence === "Monthly" ? t("cadence.monthly") : payment.cadence}
+                  </dd>
                 </div>
                 <div>
-                  <dt className="text-sm text-muted-foreground">Next execution date</dt>
+                  <dt className="text-sm text-muted-foreground">{t("paymentDetail.nextExecutionDate")}</dt>
                   <dd className="font-medium">{payment.nextExecutionDate}</dd>
                 </div>
               </>
@@ -124,7 +128,7 @@ export default async function PaymentDetailPage({ params }: Props) {
               href="/payments"
               className="inline-flex min-h-11 items-center justify-center rounded-full border border-card-border bg-muted px-5 py-2.5 text-base font-medium text-foreground"
             >
-              Back to payments
+              {t("paymentDetail.backToPayments")}
             </Link>
           </div>
         </section>

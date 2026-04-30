@@ -8,6 +8,7 @@ import { PayBeneficiaryFields } from "@/components/molecules/pay-beneficiary-fie
 import { ProductSelect } from "@/components/molecules/product-select";
 import { SectionTitle } from "@/components/atoms/section-title";
 import { isAuthenticated } from "@/lib/auth";
+import { getServerT } from "@/lib/i18n/server";
 
 type Props = {
   searchParams: Promise<{
@@ -28,6 +29,7 @@ export default async function PayFormPage({ searchParams }: Props) {
   if (!(await isAuthenticated())) {
     redirect("/login");
   }
+  const { t } = await getServerT();
 
   const params = await searchParams;
   const defaultSource = params.source ?? "";
@@ -40,13 +42,13 @@ export default async function PayFormPage({ searchParams }: Props) {
     ...accounts.map((account) => ({
       value: `account:${account.id}`,
       label: account.name,
-      detail: account.iban ?? `Account number: ${account.id}`,
+      detail: account.iban ?? t("products.accountNumber", { id: account.id }),
       amountLabel: `CHF ${chfFormatter.format(account.balance)}`,
     })),
     ...creditCards.map((card) => ({
       value: `card:${card.id}`,
       label: card.name,
-      detail: `Card number: **** ${card.last4}`,
+      detail: t("products.cardNumberMasked", { last4: card.last4 }),
       amountLabel: `CHF ${chfFormatter.format(card.amount)}`,
     })),
   ];
@@ -55,29 +57,34 @@ export default async function PayFormPage({ searchParams }: Props) {
     <Container>
       <main id="main-content" className="space-y-8">
         <header className="space-y-2">
-          <SectionTitle as="h1">Pay</SectionTitle>
+          <SectionTitle as="h1">{t("payForm.title")}</SectionTitle>
           <p className="text-sm text-muted-foreground">
-            Create a payment order and continue to preview.
+            {t("payForm.subtitle")}
           </p>
         </header>
 
         <section className="rounded-2xl border border-card-border bg-card p-5 shadow-sm sm:p-6">
           <form action="/payments/pay/preview" method="get" className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="sourceRef">Source account/card</Label>
+              <Label htmlFor="sourceRef">{t("payForm.source")}</Label>
               <ProductSelect
                 id="sourceRef"
                 name="sourceRef"
                 defaultValue={defaultSource}
                 options={sourceOptions}
-                placeholder="Select source"
+                placeholder={t("payForm.sourcePlaceholder")}
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="recipientName">Recipient</Label>
-              <Input id="recipientName" name="recipientName" required placeholder="Organization or person name" />
+              <Label htmlFor="recipientName">{t("payForm.recipient")}</Label>
+              <Input
+                id="recipientName"
+                name="recipientName"
+                required
+                placeholder={t("payForm.recipientPlaceholder")}
+              />
             </div>
 
             <PayBeneficiaryFields
@@ -87,31 +94,31 @@ export default async function PayFormPage({ searchParams }: Props) {
             />
 
             <div className="space-y-2">
-              <Label htmlFor="reference">Reference (optional)</Label>
+              <Label htmlFor="reference">{t("payForm.reference")}</Label>
               <Input
                 id="reference"
                 name="reference"
                 defaultValue={defaultReference}
-                placeholder="Invoice or bill reference"
+                placeholder={t("payForm.referencePlaceholder")}
               />
               <p className="text-sm text-muted-foreground">
-                Example: RF18 5390 0754 7034
+                {t("payForm.referenceExample")}
               </p>
             </div>
 
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="amount">Amount (CHF)</Label>
+                <Label htmlFor="amount">{t("payForm.amount")}</Label>
                 <Input id="amount" name="amount" type="number" min="0.01" step="0.01" required />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="executionDate">Execution date</Label>
+                <Label htmlFor="executionDate">{t("common.executionDate")}</Label>
                 <Input id="executionDate" name="executionDate" type="date" required />
               </div>
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <Button type="submit">Continue</Button>
+              <Button type="submit">{t("common.continue")}</Button>
             </div>
           </form>
         </section>

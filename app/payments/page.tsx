@@ -11,35 +11,38 @@ import {
   getStandingOrders,
 } from "@/data/banking-mock";
 import { isAuthenticated } from "@/lib/auth";
-
-const paymentActions = [
-  {
-    id: "scan",
-    title: "Scan",
-    description: "Scan a QR code invoice",
-    href: undefined,
-    icon: QrCode,
-  },
-  {
-    id: "pay",
-    title: "Pay",
-    description: "Create a one-time payment",
-    href: "/payments/pay",
-    icon: HandCoins,
-  },
-  {
-    id: "transfer",
-    title: "Transfer",
-    description: "Transfer between your accounts",
-    href: "/payments/transfer",
-    icon: RefreshCw,
-  },
-];
+import { getServerT } from "@/lib/i18n/server";
 
 export default async function PaymentsPage() {
   if (!(await isAuthenticated())) {
     redirect("/login");
   }
+  const { t } = await getServerT();
+
+  const paymentActions = [
+    {
+      id: "scan",
+      title: t("paymentsPage.actionScanTitle"),
+      description: t("paymentsPage.actionScanDescription"),
+      href: undefined,
+      icon: QrCode,
+    },
+    {
+      id: "pay",
+      title: t("paymentsPage.actionPayTitle"),
+      description: t("paymentsPage.actionPayDescription"),
+      href: "/payments/pay",
+      icon: HandCoins,
+    },
+    {
+      id: "transfer",
+      title: t("paymentsPage.actionTransferTitle"),
+      description: t("paymentsPage.actionTransferDescription"),
+      href: "/payments/transfer",
+      icon: RefreshCw,
+    },
+  ];
+
   const [operations, pendingOrders, standingOrders] = await Promise.all([
     getConfirmedOperations(),
     getPendingOrders(),
@@ -50,14 +53,14 @@ export default async function PaymentsPage() {
     <Container>
       <main id="main-content" className="space-y-8">
         <header className="space-y-2">
-          <SectionTitle as="h1">Payments</SectionTitle>
+          <SectionTitle as="h1">{t("paymentsPage.title")}</SectionTitle>
           <p className="text-sm text-muted-foreground">
-            Main payment actions and your order overview.
+            {t("paymentsPage.subtitle")}
           </p>
         </header>
 
         <section className="rounded-2xl border border-card-border bg-card p-5 shadow-sm sm:p-6">
-          <SectionTitle>Main actions</SectionTitle>
+          <SectionTitle>{t("paymentsPage.mainActions")}</SectionTitle>
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
             {paymentActions.map((action) => (
               <article
@@ -136,8 +139,10 @@ export default async function PaymentsPage() {
 
         <section className="rounded-2xl border border-card-border bg-card p-5 shadow-sm sm:p-6">
           <div className="mb-4 flex items-center justify-between">
-            <SectionTitle>Pending individual orders</SectionTitle>
-            <Badge variant="accent">{pendingOrders.length} pending</Badge>
+            <SectionTitle>{t("paymentsPage.pendingOrders")}</SectionTitle>
+            <Badge variant="accent">
+              {t("paymentsPage.pendingCount", { count: pendingOrders.length })}
+            </Badge>
           </div>
           <div className="space-y-3">
             {pendingOrders.map((order) => (
@@ -145,7 +150,7 @@ export default async function PaymentsPage() {
                 key={order.id}
                 href={`/payments/pending/${encodeURIComponent(order.id)}`}
                 name={order.label}
-                metaLabel="Execution date"
+                metaLabel={t("common.executionDate")}
                 metaValue={order.executionDate}
                 amount={order.amount}
               />
@@ -155,8 +160,8 @@ export default async function PaymentsPage() {
 
         <section className="rounded-2xl border border-card-border bg-card p-5 shadow-sm sm:p-6">
           <div className="mb-4 flex items-center justify-between">
-            <SectionTitle>Standing orders</SectionTitle>
-            <Badge>{standingOrders.length} active</Badge>
+            <SectionTitle>{t("paymentsPage.standingOrders")}</SectionTitle>
+            <Badge>{t("paymentsPage.activeCount", { count: standingOrders.length })}</Badge>
           </div>
           <div className="space-y-3">
             {standingOrders.map((order) => (
@@ -164,7 +169,9 @@ export default async function PaymentsPage() {
                 key={order.id}
                 href={`/payments/standing/${encodeURIComponent(order.id)}`}
                 name={order.label}
-                metaLabel={`${order.cadence} - next execution`}
+                metaLabel={t("paymentsPage.monthlyNextExecution", {
+                  cadence: order.cadence === "Monthly" ? t("cadence.monthly") : order.cadence,
+                })}
                 metaValue={order.nextExecutionDate}
                 amount={order.amount}
               />

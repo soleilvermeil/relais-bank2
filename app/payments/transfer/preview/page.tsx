@@ -5,6 +5,7 @@ import { Button } from "@/components/atoms/button";
 import { Container } from "@/components/atoms/container";
 import { SectionTitle } from "@/components/atoms/section-title";
 import { isAuthenticated } from "@/lib/auth";
+import { getServerT } from "@/lib/i18n/server";
 
 type Props = {
   searchParams: Promise<{
@@ -24,6 +25,7 @@ export default async function TransferPreviewPage({ searchParams }: Props) {
   if (!(await isAuthenticated())) {
     redirect("/login");
   }
+  const { t } = await getServerT();
 
   const params = await searchParams;
   const sourceRef = required(params.sourceRef);
@@ -40,32 +42,32 @@ export default async function TransferPreviewPage({ searchParams }: Props) {
     <Container>
       <main id="main-content" className="space-y-8">
         <header className="space-y-2">
-          <SectionTitle as="h1">Transfer - Preview</SectionTitle>
+          <SectionTitle as="h1">{t("transferPreview.title")}</SectionTitle>
           <p className="text-sm text-muted-foreground">
-            Verify details before final confirmation.
+            {t("transferPreview.subtitle")}
           </p>
         </header>
 
         <section className="rounded-2xl border border-card-border bg-card p-5 shadow-sm sm:p-6">
           <dl className="grid gap-4 sm:grid-cols-2">
             <div>
-              <dt className="text-sm text-muted-foreground">Source</dt>
+              <dt className="text-sm text-muted-foreground">{t("common.source")}</dt>
               <dd className="font-medium">{sourceRef}</dd>
             </div>
             <div>
-              <dt className="text-sm text-muted-foreground">Destination account</dt>
+              <dt className="text-sm text-muted-foreground">{t("transferPreview.destinationAccount")}</dt>
               <dd className="font-medium">{destinationAccountId}</dd>
             </div>
             <div>
-              <dt className="text-sm text-muted-foreground">Amount</dt>
+              <dt className="text-sm text-muted-foreground">{t("common.amount")}</dt>
               <dd className="font-medium">CHF {Number(amount).toFixed(2)}</dd>
             </div>
             <div>
-              <dt className="text-sm text-muted-foreground">Execution date</dt>
+              <dt className="text-sm text-muted-foreground">{t("common.executionDate")}</dt>
               <dd className="font-medium">{executionDate}</dd>
             </div>
             <div>
-              <dt className="text-sm text-muted-foreground">Note</dt>
+              <dt className="text-sm text-muted-foreground">{t("transferPreview.note")}</dt>
               <dd className="font-medium">{reference || "-"}</dd>
             </div>
           </dl>
@@ -76,12 +78,12 @@ export default async function TransferPreviewPage({ searchParams }: Props) {
             <input type="hidden" name="amount" value={amount} />
             <input type="hidden" name="executionDate" value={executionDate} />
             <input type="hidden" name="reference" value={reference} />
-            <Button type="submit">Make transfer</Button>
+            <Button type="submit">{t("transferPreview.makeTransfer")}</Button>
             <Link
               href={`/payments/transfer?source=${encodeURIComponent(sourceRef)}`}
               className="inline-flex min-h-11 items-center justify-center rounded-full border border-card-border bg-muted px-5 py-2.5 text-base font-medium text-foreground"
             >
-              Back to edit
+              {t("common.backToEdit")}
             </Link>
           </form>
         </section>

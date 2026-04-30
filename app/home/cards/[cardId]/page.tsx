@@ -11,6 +11,7 @@ import {
   getPendingOrdersUntilNextMonth,
 } from "@/data/banking-mock";
 import { isAuthenticated } from "@/lib/auth";
+import { getServerT } from "@/lib/i18n/server";
 
 type Props = {
   params: Promise<{ cardId: string }>;
@@ -20,6 +21,7 @@ export default async function CardDetailPage({ params }: Props) {
   if (!(await isAuthenticated())) {
     redirect("/login");
   }
+  const { t } = await getServerT();
 
   const { cardId } = await params;
   const card = creditCards.find((item) => item.id === cardId);
@@ -38,7 +40,7 @@ export default async function CardDetailPage({ params }: Props) {
         <header className="space-y-2">
           <SectionTitle as="h1">{card.name}</SectionTitle>
           <p className="text-sm text-muted-foreground">
-            Card details and transaction history.
+            {t("cardDetail.subtitle")}
           </p>
         </header>
 
@@ -48,16 +50,16 @@ export default async function CardDetailPage({ params }: Props) {
               href={`/payments/pay?source=${encodeURIComponent(`card:${cardId}`)}`}
               className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-5 py-2.5 text-base font-medium text-primary-foreground"
             >
-              Make payment
+              {t("cardDetail.makePayment")}
             </Link>
             <Button type="button" variant="secondary">
-              Search transactions
+              {t("cardDetail.searchTransactions")}
             </Button>
           </div>
         </section>
 
         <section className="rounded-2xl border border-card-border bg-card p-5 shadow-sm sm:p-6">
-          <SectionTitle>Pending orders until next month</SectionTitle>
+          <SectionTitle>{t("cardDetail.pendingUntilNextMonth")}</SectionTitle>
           <div className="mt-4 space-y-3">
             {pendingOrders.length > 0 ? (
               pendingOrders.map((order) => (
@@ -65,7 +67,7 @@ export default async function CardDetailPage({ params }: Props) {
                   key={order.id}
                   href={`/payments/pending/${encodeURIComponent(order.id)}`}
                   name={order.label}
-                  metaLabel="Execution date"
+                  metaLabel={t("common.executionDate")}
                   metaValue={order.executionDate}
                   amount={order.amount}
                   sign={
@@ -78,14 +80,14 @@ export default async function CardDetailPage({ params }: Props) {
               ))
             ) : (
               <p className="text-sm text-muted-foreground">
-                No pending orders scheduled before next month.
+                {t("cardDetail.noPendingBeforeNextMonth")}
               </p>
             )}
           </div>
         </section>
 
         <section className="rounded-2xl border border-card-border bg-card p-5 shadow-sm sm:p-6">
-          <SectionTitle>Past transactions</SectionTitle>
+          <SectionTitle>{t("cardDetail.pastTransactions")}</SectionTitle>
           <div className="mt-4">
             <PastTransactionsList transactions={transactions} />
           </div>

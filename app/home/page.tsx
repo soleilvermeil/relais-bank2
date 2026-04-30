@@ -5,26 +5,28 @@ import { SectionTitle } from "@/components/atoms/section-title";
 import { ListItemCard } from "@/components/molecules/list-item-card";
 import { accounts, creditCards } from "@/data/banking-mock";
 import { isAuthenticated } from "@/lib/auth";
+import { getServerT } from "@/lib/i18n/server";
 
 export default async function HomePage() {
   if (!(await isAuthenticated())) {
     redirect("/login");
   }
+  const { t } = await getServerT();
 
   return (
     <Container>
       <main id="main-content" className="space-y-8">
         <header className="space-y-2">
-          <SectionTitle as="h1">Home</SectionTitle>
+          <SectionTitle as="h1">{t("home.title")}</SectionTitle>
           <p className="text-sm text-muted-foreground">
-            Overview of your accounts and credit cards.
+            {t("home.subtitle")}
           </p>
         </header>
 
         <section className="rounded-2xl border border-card-border bg-card p-5 shadow-sm sm:p-6">
           <div className="mb-4 flex items-center justify-between">
-            <SectionTitle>My accounts</SectionTitle>
-            <Badge variant="accent">{accounts.length} accounts</Badge>
+            <SectionTitle>{t("home.myAccounts")}</SectionTitle>
+            <Badge variant="accent">{t("home.accountsCount", { count: accounts.length })}</Badge>
           </div>
           <div className="space-y-4">
             {accounts.map((account) => (
@@ -32,8 +34,8 @@ export default async function HomePage() {
                 key={account.id}
                 href={`/home/accounts/${account.id}`}
                 name={account.name}
-                metaLabel="IBAN"
-                metaValue={account.iban ?? "No IBAN available"}
+                metaLabel={t("home.iban")}
+                metaValue={account.iban ?? t("home.noIban")}
                 amount={account.balance}
               />
             ))}
@@ -42,8 +44,8 @@ export default async function HomePage() {
 
         <section className="rounded-2xl border border-card-border bg-card p-5 shadow-sm sm:p-6">
           <div className="mb-4 flex items-center justify-between">
-            <SectionTitle>My credit cards</SectionTitle>
-            <Badge>{creditCards.length} cards</Badge>
+            <SectionTitle>{t("home.myCards")}</SectionTitle>
+            <Badge>{t("home.cardsCount", { count: creditCards.length })}</Badge>
           </div>
           <div className="space-y-4">
             {creditCards.map((card) => (
@@ -51,7 +53,7 @@ export default async function HomePage() {
                 key={card.id}
                 href={`/home/cards/${card.id}`}
                 name={card.name}
-                metaLabel="Card number"
+                metaLabel={t("home.cardNumber")}
                 metaValue={`XXXX XXXX XXXX ${card.last4}`}
                 amount={card.amount}
               />

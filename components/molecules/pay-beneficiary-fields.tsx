@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Label } from "@/components/atoms/label";
 
 type Props = {
@@ -48,6 +49,7 @@ export function PayBeneficiaryFields({
   defaultBeneficiaryIban = "",
   defaultBeneficiaryBic = "",
 }: Props) {
+  const { t } = useTranslation();
   const [paymentType, setPaymentType] = useState<"domestic" | "international">(
     defaultPaymentType,
   );
@@ -65,10 +67,10 @@ export function PayBeneficiaryFields({
   function getIbanError(value: string) {
     const iban = normalizeIban(value);
     if (!iban) {
-      return "Please enter a beneficiary IBAN.";
+      return t("payBeneficiary.ibanRequired");
     }
     if (!isValidIban(iban)) {
-      return "Invalid IBAN format";
+      return t("payBeneficiary.ibanInvalid");
     }
     return "";
   }
@@ -79,10 +81,10 @@ export function PayBeneficiaryFields({
       return "";
     }
     if (!bic) {
-      return "Please enter the beneficiary bank BIC.";
+      return t("payBeneficiary.bicRequired");
     }
     if (!isValidBic(bic)) {
-      return "Invalid BIC format. Use 8 or 11 alphanumeric characters.";
+      return t("payBeneficiary.bicInvalid");
     }
     return "";
   }
@@ -122,10 +124,9 @@ export function PayBeneficiaryFields({
   return (
     <div className="space-y-5">
       <fieldset className="space-y-2">
-        <legend className="text-sm font-medium text-foreground">Payment type</legend>
+        <legend className="text-sm font-medium text-foreground">{t("payBeneficiary.paymentType")}</legend>
         <p className="text-sm text-muted-foreground">
-          Domestic payments require an IBAN. International payments require both
-          IBAN and BIC.
+          {t("payBeneficiary.hint")}
         </p>
         <div className="inline-grid min-h-11 w-full grid-cols-2 rounded-full border border-card-border bg-card p-1 sm:w-auto">
           <label
@@ -144,7 +145,7 @@ export function PayBeneficiaryFields({
               required
               className="sr-only"
             />
-            Domestic
+            {t("payBeneficiary.domestic")}
           </label>
           <label
             className={`inline-flex cursor-pointer items-center justify-center rounded-full px-4 py-2 text-sm font-medium transition ${
@@ -162,13 +163,13 @@ export function PayBeneficiaryFields({
               required
               className="sr-only"
             />
-            International
+            {t("payBeneficiary.international")}
           </label>
         </div>
       </fieldset>
 
       <div className="space-y-2">
-        <Label htmlFor="beneficiaryIban">Beneficiary IBAN</Label>
+        <Label htmlFor="beneficiaryIban">{t("payBeneficiary.iban")}</Label>
         <input
           ref={ibanInputRef}
           id="beneficiaryIban"
@@ -190,13 +191,13 @@ export function PayBeneficiaryFields({
         />
         {ibanError ? <p className="text-sm text-red-600">{ibanError}</p> : null}
         <p className="text-sm text-muted-foreground">
-          Example: CH72 1111 2222 3333 4444 5
+          {t("payBeneficiary.ibanExample")}
         </p>
       </div>
 
       {paymentType === "international" ? (
         <div className="space-y-2">
-          <Label htmlFor="beneficiaryBic">Beneficiary bank BIC (SWIFT)</Label>
+          <Label htmlFor="beneficiaryBic">{t("payBeneficiary.bic")}</Label>
           <input
             ref={bicInputRef}
             id="beneficiaryBic"
@@ -221,7 +222,7 @@ export function PayBeneficiaryFields({
             className="box-border min-h-11 w-full rounded-xl border border-card-border bg-card px-3 py-2.5 text-base text-foreground shadow-inner focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring aria-[invalid=true]:border-red-500 aria-[invalid=true]:ring-1 aria-[invalid=true]:ring-red-500"
           />
           {bicError ? <p className="text-sm text-red-600">{bicError}</p> : null}
-          <p className="text-sm text-muted-foreground">Example: POFICHBEXXX</p>
+          <p className="text-sm text-muted-foreground">{t("payBeneficiary.bicExample")}</p>
         </div>
       ) : null}
     </div>

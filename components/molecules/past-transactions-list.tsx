@@ -1,3 +1,5 @@
+"use client";
+
 import {
   BanknoteArrowDown,
   BanknoteArrowUp,
@@ -5,6 +7,7 @@ import {
   SquareArrowRightEnter,
 } from "lucide-react";
 import Link from "next/link";
+import { useTranslation, type TFunction } from "react-i18next";
 import type { PastTransaction } from "@/data/banking-mock";
 
 type Props = {
@@ -43,30 +46,31 @@ function groupByDate(transactions: PastTransaction[]) {
   return Object.entries(groups);
 }
 
-function getTransactionMeta(transaction: PastTransaction) {
+function getTransactionMeta(transaction: PastTransaction, t: TFunction) {
   const parts: string[] = [];
   if (transaction.destinationIban) {
-    parts.push(`IBAN ${transaction.destinationIban}`);
+    parts.push(t("pastTransactions.iban", { value: transaction.destinationIban }));
   }
   if (transaction.reference) {
-    parts.push(`Ref ${transaction.reference}`);
+    parts.push(t("pastTransactions.reference", { value: transaction.reference }));
   }
   if (transaction.shopAddress) {
     parts.push(transaction.shopAddress);
   }
   if (transaction.debitCardMaskedNumber) {
-    parts.push(`Card ${transaction.debitCardMaskedNumber}`);
+    parts.push(t("pastTransactions.card", { value: transaction.debitCardMaskedNumber }));
   }
   return parts.join(" - ");
 }
 
 export function PastTransactionsList({ transactions }: Props) {
+  const { t } = useTranslation();
   const groups = groupByDate(transactions);
 
   if (groups.length === 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        No past transactions available.
+        {t("pastTransactions.none")}
       </p>
     );
   }
@@ -82,7 +86,7 @@ export function PastTransactionsList({ transactions }: Props) {
             {items.map((transaction) => (
               <article key={transaction.id} className="py-1">
                 {(() => {
-                  const meta = getTransactionMeta(transaction);
+                  const meta = getTransactionMeta(transaction, t);
                   return transaction.href ? (
                     <Link href={transaction.href} className="block rounded-xl hover:bg-muted/50 px-2 py-1">
                       <div className="flex flex-wrap items-center justify-between gap-2">
