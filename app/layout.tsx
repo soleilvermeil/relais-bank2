@@ -44,7 +44,7 @@ export default async function RootLayout({
           </p>
         </div>
         <SiteHeader isLoggedIn={authenticated} />
-        <div className="flex flex-1 flex-col">{children}</div>
+        <div className="flex flex-1 flex-col pb-20 sm:pb-0">{children}</div>
         <footer className="mt-auto border-t border-card-border bg-card py-6 text-center text-sm text-muted-foreground print:hidden">
           Relais Bank pedagogic mock website
         </footer>
