@@ -78,6 +78,39 @@ export type StandingOrder = {
   destinationRef: EntityRef;
 };
 
+export type PaymentDetail =
+  | {
+      id: string;
+      paymentType: "pending";
+      amount: number;
+      sourceRef: EntityRef;
+      destinationRef: EntityRef;
+      sourceLabel: string;
+      destinationLabel: string;
+      executionDate: string;
+    }
+  | {
+      id: string;
+      paymentType: "standing";
+      amount: number;
+      sourceRef: EntityRef;
+      destinationRef: EntityRef;
+      sourceLabel: string;
+      destinationLabel: string;
+      cadence: string;
+      nextExecutionDate: string;
+    }
+  | {
+      id: string;
+      paymentType: "posted";
+      amount: number;
+      sourceRef: EntityRef;
+      destinationRef: EntityRef;
+      sourceLabel: string;
+      destinationLabel: string;
+      bookingDate: string;
+    };
+
 export type ConfirmedOperation = {
   id: string;
   type: "pay" | "transfer";
@@ -99,6 +132,7 @@ export type PastTransaction = {
   iconKind: TransactionIconKind;
   sourceRef: EntityRef;
   destinationRef: EntityRef;
+  href?: string;
 };
 
 export const accounts: Account[] = [
@@ -378,6 +412,71 @@ export async function getStandingOrders(): Promise<StandingOrder[]> {
   return baseStandingOrderRecords.map((record) => toStandingOrder(record));
 }
 
+export async function getPaymentDetail(
+  paymentType: "pending" | "standing" | "posted",
+  paymentId: string,
+): Promise<PaymentDetail | null> {
+  if (paymentType === "pending") {
+    const operations = await getConfirmedOperationState();
+    const mergedPending = [
+      ...operations.map(toPendingRecordFromOperation),
+      ...basePendingOrderRecords,
+    ];
+    const payment = mergedPending.find((item) => item.id === paymentId);
+    if (!payment) {
+      return null;
+    }
+    return {
+      id: payment.id,
+      paymentType: "pending",
+      amount: payment.amount,
+      sourceRef: payment.sourceRef,
+      destinationRef: payment.destinationRef,
+      sourceLabel: getEntityLabel(payment.sourceRef),
+      destinationLabel: getEntityLabel(payment.destinationRef),
+      executionDate: payment.executionDate,
+    };
+  }
+
+  if (paymentType === "standing") {
+    const standing = baseStandingOrderRecords.find((item) => item.id === paymentId);
+    if (!standing) {
+      return null;
+    }
+    return {
+      id: standing.id,
+      paymentType: "standing",
+      amount: standing.amount,
+      sourceRef: standing.sourceRef,
+      destinationRef: standing.destinationRef,
+      sourceLabel: getEntityLabel(standing.sourceRef),
+      destinationLabel: getEntityLabel(standing.destinationRef),
+      cadence: standing.cadence,
+      nextExecutionDate: standing.nextExecutionDate,
+    };
+  }
+
+  const operations = await getConfirmedOperationState();
+  const mergedPosted = [
+    ...operations.map(toPostedRecordFromOperation),
+    ...basePostedTransactionRecords,
+  ];
+  const posted = mergedPosted.find((item) => item.id === paymentId);
+  if (!posted) {
+    return null;
+  }
+  return {
+    id: posted.id,
+    paymentType: "posted",
+    amount: posted.amount,
+    sourceRef: posted.sourceRef,
+    destinationRef: posted.destinationRef,
+    sourceLabel: getEntityLabel(posted.sourceRef),
+    destinationLabel: getEntityLabel(posted.destinationRef),
+    bookingDate: posted.bookingDate,
+  };
+}
+
 export async function getPendingOrdersUntilNextMonth(
   sourceType: DetailSourceType,
   sourceId: string,
@@ -433,6 +532,7 @@ export async function getPastTransactionsForSource(
       iconKind: getTransactionIconKind(record.sourceRef, record.destinationRef),
       sourceRef: record.sourceRef,
       destinationRef: record.destinationRef,
+      href: `/payments/posted/${encodeURIComponent(record.id)}`,
     }));
 }
 

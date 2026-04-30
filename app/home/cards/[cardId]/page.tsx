@@ -63,7 +63,7 @@ export default async function CardDetailPage({ params }: Props) {
               pendingOrders.map((order) => (
                 <ListItemCard
                   key={order.id}
-                  href="/home"
+                  href={`/payments/pending/${encodeURIComponent(order.id)}`}
                   name={order.label}
                   metaLabel="Execution date"
                   metaValue={order.executionDate}
