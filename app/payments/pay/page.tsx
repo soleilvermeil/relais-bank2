@@ -4,12 +4,18 @@ import { Button } from "@/components/atoms/button";
 import { Container } from "@/components/atoms/container";
 import { Input } from "@/components/atoms/input";
 import { Label } from "@/components/atoms/label";
+import { PayBeneficiaryFields } from "@/components/molecules/pay-beneficiary-fields";
 import { ProductSelect } from "@/components/molecules/product-select";
 import { SectionTitle } from "@/components/atoms/section-title";
 import { isAuthenticated } from "@/lib/auth";
 
 type Props = {
-  searchParams: Promise<{ source?: string }>;
+  searchParams: Promise<{
+    source?: string;
+    paymentType?: string;
+    beneficiaryIban?: string;
+    beneficiaryBic?: string;
+  }>;
 };
 
 const chfFormatter = new Intl.NumberFormat("de-CH", {
@@ -24,6 +30,10 @@ export default async function PayFormPage({ searchParams }: Props) {
 
   const params = await searchParams;
   const defaultSource = params.source ?? "";
+  const defaultPaymentType =
+    params.paymentType === "international" ? "international" : "domestic";
+  const defaultBeneficiaryIban = params.beneficiaryIban ?? "";
+  const defaultBeneficiaryBic = params.beneficiaryBic ?? "";
   const sourceOptions = [
     ...accounts.map((account) => ({
       value: `account:${account.id}`,
@@ -68,10 +78,11 @@ export default async function PayFormPage({ searchParams }: Props) {
               <Input id="recipientName" name="recipientName" required placeholder="Organization or person name" />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="reference">IBAN or reference</Label>
-              <Input id="reference" name="reference" required placeholder="CH.. or invoice reference" />
-            </div>
+            <PayBeneficiaryFields
+              defaultPaymentType={defaultPaymentType}
+              defaultBeneficiaryIban={defaultBeneficiaryIban}
+              defaultBeneficiaryBic={defaultBeneficiaryBic}
+            />
 
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-2">

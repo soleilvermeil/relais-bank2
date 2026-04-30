@@ -1,0 +1,229 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { Label } from "@/components/atoms/label";
+
+type Props = {
+  defaultPaymentType?: "domestic" | "international";
+  defaultBeneficiaryIban?: string;
+  defaultBeneficiaryBic?: string;
+};
+
+function formatIbanForDisplay(raw: string) {
+  const compact = raw.replace(/\s+/g, "").toUpperCase();
+  return compact.replace(/(.{4})/g, "$1 ").trim();
+}
+
+function normalizeIban(value: string) {
+  return value.replace(/\s+/g, "").toUpperCase();
+}
+
+function isValidIban(iban: string) {
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/.test(iban)) {
+    return false;
+  }
+
+  const rearranged = `${iban.slice(4)}${iban.slice(0, 4)}`;
+  let remainder = 0;
+  for (const char of rearranged) {
+    const piece =
+      char >= "A" && char <= "Z" ? String(char.charCodeAt(0) - 55) : char;
+    for (const digit of piece) {
+      remainder = (remainder * 10 + Number(digit)) % 97;
+    }
+  }
+  return remainder === 1;
+}
+
+function normalizeBic(value: string) {
+  return value.replace(/\s+/g, "").toUpperCase();
+}
+
+function isValidBic(bic: string) {
+  return /^[A-Z]{6}[A-Z2-9][A-NP-Z0-9]([A-Z0-9]{3})?$/.test(bic);
+}
+
+export function PayBeneficiaryFields({
+  defaultPaymentType = "domestic",
+  defaultBeneficiaryIban = "",
+  defaultBeneficiaryBic = "",
+}: Props) {
+  const [paymentType, setPaymentType] = useState<"domestic" | "international">(
+    defaultPaymentType,
+  );
+  const [beneficiaryIban, setBeneficiaryIban] = useState(
+    formatIbanForDisplay(defaultBeneficiaryIban),
+  );
+  const [beneficiaryBic, setBeneficiaryBic] = useState(
+    normalizeBic(defaultBeneficiaryBic),
+  );
+  const [ibanError, setIbanError] = useState("");
+  const [bicError, setBicError] = useState("");
+  const ibanInputRef = useRef<HTMLInputElement>(null);
+  const bicInputRef = useRef<HTMLInputElement>(null);
+
+  function getIbanError(value: string) {
+    const iban = normalizeIban(value);
+    if (!iban) {
+      return "Please enter a beneficiary IBAN.";
+    }
+    if (!isValidIban(iban)) {
+      return "Invalid IBAN format";
+    }
+    return "";
+  }
+
+  function getBicError(value: string, isInternational: boolean) {
+    const bic = normalizeBic(value);
+    if (!isInternational) {
+      return "";
+    }
+    if (!bic) {
+      return "Please enter the beneficiary bank BIC.";
+    }
+    if (!isValidBic(bic)) {
+      return "Invalid BIC format. Use 8 or 11 alphanumeric characters.";
+    }
+    return "";
+  }
+
+  function validateFields() {
+    const nextIbanError = getIbanError(beneficiaryIban);
+    const nextBicError = getBicError(
+      beneficiaryBic,
+      paymentType === "international",
+    );
+    setIbanError(nextIbanError);
+    setBicError(nextBicError);
+    return !nextIbanError && !nextBicError;
+  }
+
+  useEffect(() => {
+    const form = ibanInputRef.current?.form;
+    if (!form) {
+      return;
+    }
+
+    const handleSubmit = (event: Event) => {
+      if (!validateFields()) {
+        event.preventDefault();
+        if (getIbanError(beneficiaryIban)) {
+          ibanInputRef.current?.focus();
+        } else {
+          bicInputRef.current?.focus();
+        }
+      }
+    };
+
+    form.addEventListener("submit", handleSubmit);
+    return () => form.removeEventListener("submit", handleSubmit);
+  }, [beneficiaryBic, beneficiaryIban, paymentType]);
+
+  return (
+    <div className="space-y-5">
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium text-foreground">Payment type</legend>
+        <p className="text-sm text-muted-foreground">
+          Domestic payments require an IBAN. International payments require both
+          IBAN and BIC.
+        </p>
+        <div className="inline-grid min-h-11 w-full grid-cols-2 rounded-full border border-card-border bg-card p-1 sm:w-auto">
+          <label
+            className={`inline-flex cursor-pointer items-center justify-center rounded-full px-4 py-2 text-sm font-medium transition ${
+              paymentType === "domestic"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-foreground hover:bg-muted/60"
+            }`}
+          >
+            <input
+              type="radio"
+              name="paymentType"
+              value="domestic"
+              checked={paymentType === "domestic"}
+              onChange={() => setPaymentType("domestic")}
+              required
+              className="sr-only"
+            />
+            Domestic
+          </label>
+          <label
+            className={`inline-flex cursor-pointer items-center justify-center rounded-full px-4 py-2 text-sm font-medium transition ${
+              paymentType === "international"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-foreground hover:bg-muted/60"
+            }`}
+          >
+            <input
+              type="radio"
+              name="paymentType"
+              value="international"
+              checked={paymentType === "international"}
+              onChange={() => setPaymentType("international")}
+              required
+              className="sr-only"
+            />
+            International
+          </label>
+        </div>
+      </fieldset>
+
+      <div className="space-y-2">
+        <Label htmlFor="beneficiaryIban">Beneficiary IBAN</Label>
+        <input
+          ref={ibanInputRef}
+          id="beneficiaryIban"
+          name="beneficiaryIban"
+          required
+          value={beneficiaryIban}
+          onChange={(event) => {
+            setBeneficiaryIban(formatIbanForDisplay(event.target.value));
+            if (ibanError) {
+              setIbanError(getIbanError(event.target.value));
+            }
+          }}
+          onBlur={() => setIbanError(getIbanError(beneficiaryIban))}
+          aria-invalid={ibanError ? "true" : "false"}
+          autoCapitalize="characters"
+          autoCorrect="off"
+          spellCheck={false}
+          className="box-border min-h-11 w-full rounded-xl border border-card-border bg-card px-3 py-2.5 text-base text-foreground shadow-inner focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring aria-[invalid=true]:border-red-500 aria-[invalid=true]:ring-1 aria-[invalid=true]:ring-red-500"
+        />
+        {ibanError ? <p className="text-sm text-red-600">{ibanError}</p> : null}
+        <p className="text-sm text-muted-foreground">
+          Example: CH72 1111 2222 3333 4444 5
+        </p>
+      </div>
+
+      {paymentType === "international" ? (
+        <div className="space-y-2">
+          <Label htmlFor="beneficiaryBic">Beneficiary bank BIC (SWIFT)</Label>
+          <input
+            ref={bicInputRef}
+            id="beneficiaryBic"
+            name="beneficiaryBic"
+            required
+            value={beneficiaryBic}
+            onChange={(event) => {
+              setBeneficiaryBic(normalizeBic(event.target.value));
+              if (bicError) {
+                setBicError(
+                  getBicError(event.target.value, paymentType === "international"),
+                );
+              }
+            }}
+            onBlur={() =>
+              setBicError(getBicError(beneficiaryBic, paymentType === "international"))
+            }
+            aria-invalid={bicError ? "true" : "false"}
+            autoCapitalize="characters"
+            autoCorrect="off"
+            spellCheck={false}
+            className="box-border min-h-11 w-full rounded-xl border border-card-border bg-card px-3 py-2.5 text-base text-foreground shadow-inner focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring aria-[invalid=true]:border-red-500 aria-[invalid=true]:ring-1 aria-[invalid=true]:ring-red-500"
+          />
+          {bicError ? <p className="text-sm text-red-600">{bicError}</p> : null}
+          <p className="text-sm text-muted-foreground">Example: POFICHBEXXX</p>
+        </div>
+      ) : null}
+    </div>
+  );
+}

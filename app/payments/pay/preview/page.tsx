@@ -10,7 +10,9 @@ type Props = {
   searchParams: Promise<{
     sourceRef?: string;
     recipientName?: string;
-    reference?: string;
+    paymentType?: string;
+    beneficiaryIban?: string;
+    beneficiaryBic?: string;
     amount?: string;
     executionDate?: string;
   }>;
@@ -28,11 +30,23 @@ export default async function PayPreviewPage({ searchParams }: Props) {
   const params = await searchParams;
   const sourceRef = required(params.sourceRef);
   const recipientName = required(params.recipientName);
-  const reference = required(params.reference);
+  const paymentType = required(params.paymentType);
+  const beneficiaryIban = required(params.beneficiaryIban);
+  const beneficiaryBic = required(params.beneficiaryBic);
   const amount = required(params.amount);
   const executionDate = required(params.executionDate);
+  const isDomestic = paymentType === "domestic";
+  const isInternational = paymentType === "international";
 
-  if (!sourceRef || !recipientName || !reference || !amount || !executionDate) {
+  if (
+    !sourceRef ||
+    !recipientName ||
+    !beneficiaryIban ||
+    !amount ||
+    !executionDate ||
+    (!isDomestic && !isInternational) ||
+    (isInternational && !beneficiaryBic)
+  ) {
     redirect("/payments/pay");
   }
 
@@ -57,8 +71,18 @@ export default async function PayPreviewPage({ searchParams }: Props) {
               <dd className="font-medium">{recipientName}</dd>
             </div>
             <div>
-              <dt className="text-sm text-muted-foreground">Reference</dt>
-              <dd className="font-medium">{reference}</dd>
+              <dt className="text-sm text-muted-foreground">Payment type</dt>
+              <dd className="font-medium">{isDomestic ? "Domestic" : "International"}</dd>
+            </div>
+            {isInternational ? (
+              <div>
+                <dt className="text-sm text-muted-foreground">Beneficiary bank BIC</dt>
+                <dd className="font-medium">{beneficiaryBic}</dd>
+              </div>
+            ) : null}
+            <div>
+              <dt className="text-sm text-muted-foreground">Beneficiary IBAN</dt>
+              <dd className="font-medium">{beneficiaryIban}</dd>
             </div>
             <div>
               <dt className="text-sm text-muted-foreground">Amount</dt>
@@ -73,12 +97,14 @@ export default async function PayPreviewPage({ searchParams }: Props) {
           <form action={confirmPayOperation} className="mt-6 flex flex-wrap gap-3">
             <input type="hidden" name="sourceRef" value={sourceRef} />
             <input type="hidden" name="recipientName" value={recipientName} />
-            <input type="hidden" name="reference" value={reference} />
+            <input type="hidden" name="paymentType" value={paymentType} />
+            <input type="hidden" name="beneficiaryIban" value={beneficiaryIban} />
+            <input type="hidden" name="beneficiaryBic" value={beneficiaryBic} />
             <input type="hidden" name="amount" value={amount} />
             <input type="hidden" name="executionDate" value={executionDate} />
             <Button type="submit">Make payment</Button>
             <Link
-              href={`/payments/pay?source=${encodeURIComponent(sourceRef)}`}
+              href={`/payments/pay?source=${encodeURIComponent(sourceRef)}&paymentType=${encodeURIComponent(paymentType)}&beneficiaryIban=${encodeURIComponent(beneficiaryIban)}&beneficiaryBic=${encodeURIComponent(beneficiaryBic)}`}
               className="inline-flex min-h-11 items-center justify-center rounded-full border border-card-border bg-muted px-5 py-2.5 text-base font-medium text-foreground"
             >
               Back to edit

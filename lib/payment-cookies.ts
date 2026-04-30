@@ -18,6 +18,11 @@ export type PaymentOperationDelta = {
   currency: "CHF";
   executionDate: string;
   reference: string;
+  paymentDetails?: {
+    paymentType: "domestic" | "international";
+    beneficiaryIban: string;
+    beneficiaryBic?: string;
+  };
 };
 
 const cookieOptions = {

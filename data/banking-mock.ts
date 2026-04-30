@@ -121,6 +121,11 @@ export type ConfirmedOperation = {
   currency: "CHF";
   executionDate: string;
   reference: string;
+  paymentDetails?: {
+    paymentType: "domestic" | "international";
+    beneficiaryIban: string;
+    beneficiaryBic?: string;
+  };
 };
 
 export type PastTransaction = {
@@ -273,6 +278,7 @@ function toConfirmedOperation(
     currency: delta.currency,
     executionDate: delta.executionDate,
     reference: delta.reference,
+    paymentDetails: delta.paymentDetails,
   };
 }
 
