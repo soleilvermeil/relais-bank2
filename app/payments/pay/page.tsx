@@ -4,12 +4,18 @@ import { Button } from "@/components/atoms/button";
 import { Container } from "@/components/atoms/container";
 import { Input } from "@/components/atoms/input";
 import { Label } from "@/components/atoms/label";
+import { ProductSelect } from "@/components/molecules/product-select";
 import { SectionTitle } from "@/components/atoms/section-title";
 import { isAuthenticated } from "@/lib/auth";
 
 type Props = {
   searchParams: Promise<{ source?: string }>;
 };
+
+const chfFormatter = new Intl.NumberFormat("de-CH", {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
 
 export default async function PayFormPage({ searchParams }: Props) {
   if (!(await isAuthenticated())) {
@@ -18,6 +24,20 @@ export default async function PayFormPage({ searchParams }: Props) {
 
   const params = await searchParams;
   const defaultSource = params.source ?? "";
+  const sourceOptions = [
+    ...accounts.map((account) => ({
+      value: `account:${account.id}`,
+      label: account.name,
+      detail: account.iban ?? `Account number: ${account.id}`,
+      amountLabel: `CHF ${chfFormatter.format(account.balance)}`,
+    })),
+    ...creditCards.map((card) => ({
+      value: `card:${card.id}`,
+      label: card.name,
+      detail: `Card number: **** ${card.last4}`,
+      amountLabel: `CHF ${chfFormatter.format(card.amount)}`,
+    })),
+  ];
 
   return (
     <Container>
@@ -33,25 +53,14 @@ export default async function PayFormPage({ searchParams }: Props) {
           <form action="/payments/pay/preview" method="get" className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="sourceRef">Source account/card</Label>
-              <select
+              <ProductSelect
                 id="sourceRef"
                 name="sourceRef"
                 defaultValue={defaultSource}
+                options={sourceOptions}
+                placeholder="Select source"
                 required
-                className="box-border min-h-11 w-full rounded-xl border border-card-border bg-card px-3 py-2.5 text-base text-foreground shadow-inner focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="">Select source</option>
-                {accounts.map((account) => (
-                  <option key={`account:${account.id}`} value={`account:${account.id}`}>
-                    {account.name}
-                  </option>
-                ))}
-                {creditCards.map((card) => (
-                  <option key={`card:${card.id}`} value={`card:${card.id}`}>
-                    {card.name}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
 
             <div className="space-y-2">
