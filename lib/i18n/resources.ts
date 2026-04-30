@@ -5,7 +5,7 @@ export const resources = {
     translation: {
       layout: {
         skipToContent: "Skip to main content",
-        demoBanner: "Demo training environment - no real banking operations",
+        demoBanner: "This is a learning website. No transaction is ever made.",
         footer: "Relais Bank pedagogic mock website",
       },
       common: {
@@ -177,7 +177,7 @@ export const resources = {
       layout: {
         skipToContent: "Aller au contenu principal",
         demoBanner:
-          "Environnement de démonstration - aucune opération bancaire réelle",
+          "Site web de démonstration pédagogique. Aucun virement n'a lieu.",
         footer: "Site pédagogique fictif de Relais Bank",
       },
       common: {
