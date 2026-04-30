@@ -7,6 +7,7 @@ import { Label } from "@/components/atoms/label";
 import { ProductSelect } from "@/components/molecules/product-select";
 import { SectionTitle } from "@/components/atoms/section-title";
 import { isAuthenticated } from "@/lib/auth";
+import { getLocalizedAccountNameById } from "@/lib/i18n/account-names";
 import { getServerT } from "@/lib/i18n/server";
 
 type Props = {
@@ -29,7 +30,7 @@ export default async function TransferFormPage({ searchParams }: Props) {
   const sourceOptions = [
     ...accounts.map((account) => ({
       value: `account:${account.id}`,
-      label: account.name,
+      label: getLocalizedAccountNameById(account.id, t, account.name),
       detail: account.iban ?? t("products.accountNumber", { id: account.id }),
       amountLabel: `CHF ${chfFormatter.format(account.balance)}`,
     })),
@@ -42,7 +43,7 @@ export default async function TransferFormPage({ searchParams }: Props) {
   ];
   const destinationOptions = accounts.map((account) => ({
     value: account.id,
-    label: account.name,
+    label: getLocalizedAccountNameById(account.id, t, account.name),
     detail: account.iban ?? t("products.accountNumber", { id: account.id }),
     amountLabel: `CHF ${chfFormatter.format(account.balance)}`,
   }));

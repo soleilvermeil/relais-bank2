@@ -162,6 +162,11 @@ export const resources = {
         accountNumber: "Account number: {{id}}",
         cardNumberMasked: "Card number: **** {{last4}}",
       },
+      accountNames: {
+        checking: "Checking account",
+        savings: "Savings account",
+        retirement3a: "3a retirement savings account",
+      },
       cadence: {
         monthly: "Monthly",
       },
@@ -333,6 +338,11 @@ export const resources = {
       products: {
         accountNumber: "Numéro de compte : {{id}}",
         cardNumberMasked: "Numéro de carte : **** {{last4}}",
+      },
+      accountNames: {
+        checking: "Compte courant",
+        savings: "Compte d'épargne",
+        retirement3a: "Compte prévoyance 3a",
       },
       cadence: {
         monthly: "Mensuel",

@@ -11,6 +11,7 @@ import {
   getPendingOrdersUntilNextMonth,
 } from "@/data/banking-mock";
 import { isAuthenticated } from "@/lib/auth";
+import { getLocalizedAccountNameById } from "@/lib/i18n/account-names";
 import { getServerT } from "@/lib/i18n/server";
 
 type Props = {
@@ -38,7 +39,9 @@ export default async function AccountDetailPage({ params }: Props) {
     <Container>
       <main id="main-content" className="space-y-8">
         <header className="space-y-2">
-          <SectionTitle as="h1">{account.name}</SectionTitle>
+          <SectionTitle as="h1">
+            {getLocalizedAccountNameById(account.id, t, account.name)}
+          </SectionTitle>
           <p className="text-sm text-muted-foreground">
             {t("accountDetail.subtitle")}
           </p>

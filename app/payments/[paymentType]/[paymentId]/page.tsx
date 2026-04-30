@@ -2,8 +2,10 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Container } from "@/components/atoms/container";
 import { SectionTitle } from "@/components/atoms/section-title";
+import { accounts } from "@/data/banking-mock";
 import { getPaymentDetail } from "@/data/banking-mock";
 import { isAuthenticated } from "@/lib/auth";
+import { getLocalizedAccountNameById } from "@/lib/i18n/account-names";
 import { getServerT } from "@/lib/i18n/server";
 
 type Props = {
@@ -39,6 +41,19 @@ export default async function PaymentDetailPage({ params }: Props) {
     notFound();
   }
 
+  const sourceAccount = payment.sourceRef.entityType === "account"
+    ? accounts.find((account) => account.id === payment.sourceRef.entityId)
+    : null;
+  const destinationAccount = payment.destinationRef.entityType === "account"
+    ? accounts.find((account) => account.id === payment.destinationRef.entityId)
+    : null;
+  const sourceLabel = sourceAccount
+    ? getLocalizedAccountNameById(sourceAccount.id, t, payment.sourceLabel)
+    : payment.sourceLabel;
+  const destinationLabel = destinationAccount
+    ? getLocalizedAccountNameById(destinationAccount.id, t, payment.destinationLabel)
+    : payment.destinationLabel;
+
   return (
     <Container>
       <main id="main-content" className="space-y-8">
@@ -67,11 +82,11 @@ export default async function PaymentDetailPage({ params }: Props) {
             </div>
             <div>
               <dt className="text-sm text-muted-foreground">{t("common.source")}</dt>
-              <dd className="font-medium">{payment.sourceLabel}</dd>
+              <dd className="font-medium">{sourceLabel}</dd>
             </div>
             <div>
               <dt className="text-sm text-muted-foreground">{t("paymentDetail.destination")}</dt>
-              <dd className="font-medium">{payment.destinationLabel}</dd>
+              <dd className="font-medium">{destinationLabel}</dd>
             </div>
             {payment.destinationIban ? (
               <div>

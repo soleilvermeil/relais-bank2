@@ -5,6 +5,7 @@ import { SectionTitle } from "@/components/atoms/section-title";
 import { ListItemCard } from "@/components/molecules/list-item-card";
 import { accounts, creditCards } from "@/data/banking-mock";
 import { isAuthenticated } from "@/lib/auth";
+import { getLocalizedAccountNameById } from "@/lib/i18n/account-names";
 import { getServerT } from "@/lib/i18n/server";
 
 export default async function HomePage() {
@@ -33,7 +34,7 @@ export default async function HomePage() {
               <ListItemCard
                 key={account.id}
                 href={`/home/accounts/${account.id}`}
-                name={account.name}
+                name={getLocalizedAccountNameById(account.id, t, account.name)}
                 metaLabel={t("home.iban")}
                 metaValue={account.iban ?? t("home.noIban")}
                 amount={account.balance}

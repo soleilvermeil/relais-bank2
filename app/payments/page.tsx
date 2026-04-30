@@ -10,6 +10,7 @@ import {
   getStandingOrders,
 } from "@/data/banking-mock";
 import { isAuthenticated } from "@/lib/auth";
+import { getLocalizedAccountNameById } from "@/lib/i18n/account-names";
 import { getServerT } from "@/lib/i18n/server";
 
 export default async function PaymentsPage() {
@@ -147,7 +148,15 @@ export default async function PaymentsPage() {
               <ListItemCard
                 key={order.id}
                 href={`/payments/pending/${encodeURIComponent(order.id)}`}
-                name={order.label}
+                name={
+                  order.destinationRef.entityType === "account"
+                    ? getLocalizedAccountNameById(
+                        order.destinationRef.entityId,
+                        t,
+                        order.label,
+                      )
+                    : order.label
+                }
                 metaLabel={t("common.executionDate")}
                 metaValue={order.executionDate}
                 amount={order.amount}
@@ -166,7 +175,15 @@ export default async function PaymentsPage() {
               <ListItemCard
                 key={order.id}
                 href={`/payments/standing/${encodeURIComponent(order.id)}`}
-                name={order.label}
+                name={
+                  order.destinationRef.entityType === "account"
+                    ? getLocalizedAccountNameById(
+                        order.destinationRef.entityId,
+                        t,
+                        order.label,
+                      )
+                    : order.label
+                }
                 metaLabel={t("paymentsPage.monthlyNextExecution", {
                   cadence: order.cadence === "Monthly" ? t("cadence.monthly") : order.cadence,
                 })}

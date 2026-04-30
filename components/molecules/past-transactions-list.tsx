@@ -9,7 +9,9 @@ import {
 import Link from "next/link";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
+import { accounts } from "@/data/banking-mock";
 import type { PastTransaction } from "@/data/banking-mock";
+import { getLocalizedAccountNameById } from "@/lib/i18n/account-names";
 
 type Props = {
   transactions: PastTransaction[];
@@ -64,6 +66,22 @@ function getTransactionMeta(transaction: PastTransaction, t: TFunction) {
   return parts.join(" - ");
 }
 
+function getLocalizedTransactionLabel(transaction: PastTransaction, t: TFunction) {
+  const counterpartyRef =
+    transaction.direction === "incoming" ? transaction.sourceRef : transaction.destinationRef;
+
+  if (counterpartyRef.entityType !== "account") {
+    return transaction.label;
+  }
+
+  const account = accounts.find((item) => item.id === counterpartyRef.entityId);
+  if (!account) {
+    return transaction.label;
+  }
+
+  return getLocalizedAccountNameById(account.id, t, transaction.label);
+}
+
 export function PastTransactionsList({ transactions }: Props) {
   const { t } = useTranslation();
   const groups = groupByDate(transactions);
@@ -88,6 +106,7 @@ export function PastTransactionsList({ transactions }: Props) {
               <article key={transaction.id} className="py-1">
                 {(() => {
                   const meta = getTransactionMeta(transaction, t);
+                  const label = getLocalizedTransactionLabel(transaction, t);
                   return transaction.href ? (
                     <Link href={transaction.href} className="block rounded-xl hover:bg-muted/50 px-2 py-1">
                       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -100,7 +119,7 @@ export function PastTransactionsList({ transactions }: Props) {
                           </span>
                           <div className="min-w-0">
                             <p className="text-sm font-medium text-foreground">
-                              {transaction.label}
+                              {label}
                             </p>
                             {meta ? (
                               <p className="mt-0.5 truncate text-xs text-muted-foreground">
@@ -131,7 +150,7 @@ export function PastTransactionsList({ transactions }: Props) {
                         </span>
                         <div className="min-w-0">
                           <p className="text-sm font-medium text-foreground">
-                            {transaction.label}
+                            {label}
                           </p>
                           {meta ? (
                             <p className="mt-0.5 truncate text-xs text-muted-foreground">
