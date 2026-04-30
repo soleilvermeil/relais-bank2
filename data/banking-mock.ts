@@ -33,6 +33,8 @@ type ExternalEntity = {
   id: string;
   type: ExternalEntityType;
   name: string;
+  iban?: string;
+  address?: string;
 };
 
 type MoneyMovementBase = {
@@ -41,6 +43,10 @@ type MoneyMovementBase = {
   sourceRef: EntityRef;
   destinationRef: EntityRef;
   label?: string;
+  reference?: string;
+  destinationIban?: string;
+  shopAddress?: string;
+  debitCardMaskedNumber?: string;
 };
 
 export type PendingOrderRecord = MoneyMovementBase & {
@@ -66,6 +72,8 @@ export type PendingOrder = {
   amount: number;
   sourceRef: EntityRef;
   destinationRef: EntityRef;
+  reference?: string;
+  destinationIban?: string;
 };
 
 export type StandingOrder = {
@@ -76,6 +84,8 @@ export type StandingOrder = {
   amount: number;
   sourceRef: EntityRef;
   destinationRef: EntityRef;
+  reference?: string;
+  destinationIban?: string;
 };
 
 export type PaymentDetail =
@@ -88,6 +98,8 @@ export type PaymentDetail =
       sourceLabel: string;
       destinationLabel: string;
       executionDate: string;
+      reference?: string;
+      destinationIban?: string;
     }
   | {
       id: string;
@@ -99,6 +111,8 @@ export type PaymentDetail =
       destinationLabel: string;
       cadence: string;
       nextExecutionDate: string;
+      reference?: string;
+      destinationIban?: string;
     }
   | {
       id: string;
@@ -109,6 +123,10 @@ export type PaymentDetail =
       sourceLabel: string;
       destinationLabel: string;
       bookingDate: string;
+      reference?: string;
+      destinationIban?: string;
+      shopAddress?: string;
+      debitCardMaskedNumber?: string;
     };
 
 export type ConfirmedOperation = {
@@ -126,6 +144,11 @@ export type ConfirmedOperation = {
     beneficiaryIban: string;
     beneficiaryBic?: string;
   };
+  transactionDetails?: {
+    destinationIban?: string;
+    shopAddress?: string;
+    debitCardMaskedNumber?: string;
+  };
 };
 
 export type PastTransaction = {
@@ -137,6 +160,10 @@ export type PastTransaction = {
   iconKind: TransactionIconKind;
   sourceRef: EntityRef;
   destinationRef: EntityRef;
+  reference?: string;
+  destinationIban?: string;
+  shopAddress?: string;
+  debitCardMaskedNumber?: string;
   href?: string;
 };
 
@@ -152,15 +179,58 @@ export const creditCards: CreditCard[] = [
 ];
 
 const externalEntities: ExternalEntity[] = [
-  { id: "regie-du-lac", type: "external_organization", name: "Regie du Lac" },
-  { id: "helsana", type: "external_organization", name: "Helsana" },
-  { id: "swisscom", type: "external_organization", name: "Swisscom" },
+  {
+    id: "regie-du-lac",
+    type: "external_organization",
+    name: "Regie du Lac",
+    iban: "CH56 0900 0000 1234 5678 9",
+    address: "Rue du Lac 12, 1007 Lausanne",
+  },
+  {
+    id: "helsana",
+    type: "external_organization",
+    name: "Helsana",
+    iban: "CH20 0076 2011 0000 1122 3",
+    address: "Avenue de la Gare 14, 1003 Lausanne",
+  },
+  {
+    id: "swisscom",
+    type: "external_organization",
+    name: "Swisscom",
+    iban: "CH38 0900 0000 8765 4321 0",
+    address: "Chemin du Signal 8, 1012 Lausanne",
+  },
   { id: "employer", type: "external_organization", name: "Employer SA" },
-  { id: "migros", type: "merchant", name: "Migros" },
-  { id: "coop-city", type: "merchant", name: "Coop City" },
-  { id: "cff", type: "merchant", name: "CFF" },
-  { id: "manor", type: "merchant", name: "Manor" },
-  { id: "hotel-lac", type: "merchant", name: "Hotel du Lac" },
+  {
+    id: "migros",
+    type: "merchant",
+    name: "Migros",
+    address: "Rue Centrale 5, 1003 Lausanne",
+  },
+  {
+    id: "coop-city",
+    type: "merchant",
+    name: "Coop City",
+    address: "Place Saint-Francois 9, 1003 Lausanne",
+  },
+  {
+    id: "cff",
+    type: "merchant",
+    name: "CFF",
+    address: "Place de la Gare 1, 1003 Lausanne",
+  },
+  {
+    id: "manor",
+    type: "merchant",
+    name: "Manor",
+    address: "Rue Saint-Laurent 6, 1003 Lausanne",
+  },
+  {
+    id: "hotel-lac",
+    type: "merchant",
+    name: "Hotel du Lac",
+    address: "Quai du Lac 3, 1006 Lausanne",
+  },
 ];
 
 const basePendingOrderRecords: PendingOrderRecord[] = [
@@ -213,6 +283,7 @@ const basePostedTransactionRecords: PostedTransactionRecord[] = [
     amount: 6200,
     sourceRef: { entityType: "external_organization", entityId: "employer" },
     destinationRef: { entityType: "account", entityId: "checking" },
+    destinationIban: "CH93 0076 2011 6238 5295 7",
   },
   {
     id: "tx-2",
@@ -227,6 +298,7 @@ const basePostedTransactionRecords: PostedTransactionRecord[] = [
     amount: 500,
     sourceRef: { entityType: "account", entityId: "checking" },
     destinationRef: { entityType: "account", entityId: "savings" },
+    destinationIban: "CH44 0076 2011 0000 9876 5",
   },
   {
     id: "tx-4",
@@ -241,6 +313,8 @@ const basePostedTransactionRecords: PostedTransactionRecord[] = [
     amount: 92.7,
     sourceRef: { entityType: "card", entityId: "visa-gold" },
     destinationRef: { entityType: "merchant", entityId: "migros" },
+    shopAddress: "Rue Centrale 5, 1003 Lausanne",
+    debitCardMaskedNumber: "**** **** **** 4821",
   },
   {
     id: "tx-6",
@@ -255,6 +329,8 @@ const basePostedTransactionRecords: PostedTransactionRecord[] = [
     amount: 68.3,
     sourceRef: { entityType: "card", entityId: "mastercard-silver" },
     destinationRef: { entityType: "merchant", entityId: "manor" },
+    shopAddress: "Rue Saint-Laurent 6, 1003 Lausanne",
+    debitCardMaskedNumber: "**** **** **** 9073",
   },
   {
     id: "tx-8",
@@ -262,6 +338,8 @@ const basePostedTransactionRecords: PostedTransactionRecord[] = [
     amount: 122.5,
     sourceRef: { entityType: "card", entityId: "mastercard-silver" },
     destinationRef: { entityType: "merchant", entityId: "cff" },
+    shopAddress: "Place de la Gare 1, 1003 Lausanne",
+    debitCardMaskedNumber: "**** **** **** 9073",
   },
 ];
 
@@ -279,6 +357,7 @@ function toConfirmedOperation(
     executionDate: delta.executionDate,
     reference: delta.reference,
     paymentDetails: delta.paymentDetails,
+    transactionDetails: delta.transactionDetails,
   };
 }
 
@@ -291,6 +370,10 @@ function toPendingRecordFromOperation(
     executionDate: operation.executionDate,
     sourceRef: operation.sourceRef,
     destinationRef: operation.destinationRef,
+    reference: operation.reference,
+    destinationIban:
+      operation.transactionDetails?.destinationIban ??
+      operation.paymentDetails?.beneficiaryIban,
   };
 }
 
@@ -303,6 +386,12 @@ function toPostedRecordFromOperation(
     amount: operation.amount,
     sourceRef: operation.sourceRef,
     destinationRef: operation.destinationRef,
+    reference: operation.reference,
+    destinationIban:
+      operation.transactionDetails?.destinationIban ??
+      operation.paymentDetails?.beneficiaryIban,
+    shopAddress: operation.transactionDetails?.shopAddress,
+    debitCardMaskedNumber: operation.transactionDetails?.debitCardMaskedNumber,
   };
 }
 
@@ -336,6 +425,24 @@ function getEntityLabel(ref: EntityRef) {
       (entity) => entity.id === ref.entityId && entity.type === ref.entityType,
     )?.name ?? ref.entityId
   );
+}
+
+function getEntityIban(ref: EntityRef) {
+  if (ref.entityType === "account") {
+    return accounts.find((a) => a.id === ref.entityId)?.iban;
+  }
+  if (ref.entityType === "external_organization") {
+    return externalEntities.find(
+      (entity) => entity.id === ref.entityId && entity.type === ref.entityType,
+    )?.iban;
+  }
+  return undefined;
+}
+
+function getEntityAddress(ref: EntityRef) {
+  return externalEntities.find(
+    (entity) => entity.id === ref.entityId && entity.type === ref.entityType,
+  )?.address;
 }
 
 function getCounterpartyLabel(
@@ -386,6 +493,8 @@ function toPendingOrder(
     amount: record.amount,
     sourceRef: record.sourceRef,
     destinationRef: record.destinationRef,
+    reference: record.reference,
+    destinationIban: record.destinationIban ?? getEntityIban(record.destinationRef),
   };
 }
 
@@ -403,6 +512,8 @@ function toStandingOrder(
     amount: record.amount,
     sourceRef: record.sourceRef,
     destinationRef: record.destinationRef,
+    reference: record.reference,
+    destinationIban: record.destinationIban ?? getEntityIban(record.destinationRef),
   };
 }
 
@@ -441,6 +552,8 @@ export async function getPaymentDetail(
       sourceLabel: getEntityLabel(payment.sourceRef),
       destinationLabel: getEntityLabel(payment.destinationRef),
       executionDate: payment.executionDate,
+      reference: payment.reference,
+      destinationIban: payment.destinationIban ?? getEntityIban(payment.destinationRef),
     };
   }
 
@@ -459,6 +572,8 @@ export async function getPaymentDetail(
       destinationLabel: getEntityLabel(standing.destinationRef),
       cadence: standing.cadence,
       nextExecutionDate: standing.nextExecutionDate,
+      reference: standing.reference,
+      destinationIban: standing.destinationIban ?? getEntityIban(standing.destinationRef),
     };
   }
 
@@ -480,6 +595,10 @@ export async function getPaymentDetail(
     sourceLabel: getEntityLabel(posted.sourceRef),
     destinationLabel: getEntityLabel(posted.destinationRef),
     bookingDate: posted.bookingDate,
+    reference: posted.reference,
+    destinationIban: posted.destinationIban ?? getEntityIban(posted.destinationRef),
+    shopAddress: posted.shopAddress ?? getEntityAddress(posted.destinationRef),
+    debitCardMaskedNumber: posted.debitCardMaskedNumber,
   };
 }
 
@@ -538,6 +657,10 @@ export async function getPastTransactionsForSource(
       iconKind: getTransactionIconKind(record.sourceRef, record.destinationRef),
       sourceRef: record.sourceRef,
       destinationRef: record.destinationRef,
+      reference: record.reference,
+      destinationIban: record.destinationIban ?? getEntityIban(record.destinationRef),
+      shopAddress: record.shopAddress ?? getEntityAddress(record.destinationRef),
+      debitCardMaskedNumber: record.debitCardMaskedNumber,
       href: `/payments/posted/${encodeURIComponent(record.id)}`,
     }));
 }

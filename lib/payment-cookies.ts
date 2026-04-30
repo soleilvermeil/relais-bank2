@@ -23,6 +23,11 @@ export type PaymentOperationDelta = {
     beneficiaryIban: string;
     beneficiaryBic?: string;
   };
+  transactionDetails?: {
+    destinationIban?: string;
+    shopAddress?: string;
+    debitCardMaskedNumber?: string;
+  };
 };
 
 const cookieOptions = {

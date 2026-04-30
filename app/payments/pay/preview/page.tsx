@@ -13,6 +13,7 @@ type Props = {
     paymentType?: string;
     beneficiaryIban?: string;
     beneficiaryBic?: string;
+    reference?: string;
     amount?: string;
     executionDate?: string;
   }>;
@@ -33,6 +34,7 @@ export default async function PayPreviewPage({ searchParams }: Props) {
   const paymentType = required(params.paymentType);
   const beneficiaryIban = required(params.beneficiaryIban);
   const beneficiaryBic = required(params.beneficiaryBic);
+  const reference = required(params.reference);
   const amount = required(params.amount);
   const executionDate = required(params.executionDate);
   const isDomestic = paymentType === "domestic";
@@ -84,6 +86,12 @@ export default async function PayPreviewPage({ searchParams }: Props) {
               <dt className="text-sm text-muted-foreground">Beneficiary IBAN</dt>
               <dd className="font-medium">{beneficiaryIban}</dd>
             </div>
+            {reference ? (
+              <div>
+                <dt className="text-sm text-muted-foreground">Reference</dt>
+                <dd className="font-medium">{reference}</dd>
+              </div>
+            ) : null}
             <div>
               <dt className="text-sm text-muted-foreground">Amount</dt>
               <dd className="font-medium">CHF {Number(amount).toFixed(2)}</dd>
@@ -100,11 +108,12 @@ export default async function PayPreviewPage({ searchParams }: Props) {
             <input type="hidden" name="paymentType" value={paymentType} />
             <input type="hidden" name="beneficiaryIban" value={beneficiaryIban} />
             <input type="hidden" name="beneficiaryBic" value={beneficiaryBic} />
+            <input type="hidden" name="reference" value={reference} />
             <input type="hidden" name="amount" value={amount} />
             <input type="hidden" name="executionDate" value={executionDate} />
             <Button type="submit">Make payment</Button>
             <Link
-              href={`/payments/pay?source=${encodeURIComponent(sourceRef)}&paymentType=${encodeURIComponent(paymentType)}&beneficiaryIban=${encodeURIComponent(beneficiaryIban)}&beneficiaryBic=${encodeURIComponent(beneficiaryBic)}`}
+              href={`/payments/pay?source=${encodeURIComponent(sourceRef)}&paymentType=${encodeURIComponent(paymentType)}&beneficiaryIban=${encodeURIComponent(beneficiaryIban)}&beneficiaryBic=${encodeURIComponent(beneficiaryBic)}&reference=${encodeURIComponent(reference)}`}
               className="inline-flex min-h-11 items-center justify-center rounded-full border border-card-border bg-muted px-5 py-2.5 text-base font-medium text-foreground"
             >
               Back to edit

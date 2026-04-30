@@ -71,6 +71,30 @@ export default async function PaymentDetailPage({ params }: Props) {
               <dt className="text-sm text-muted-foreground">Destination</dt>
               <dd className="font-medium">{payment.destinationLabel}</dd>
             </div>
+            {payment.destinationIban ? (
+              <div>
+                <dt className="text-sm text-muted-foreground">Destination IBAN</dt>
+                <dd className="font-medium">{payment.destinationIban}</dd>
+              </div>
+            ) : null}
+            {payment.reference ? (
+              <div>
+                <dt className="text-sm text-muted-foreground">Reference</dt>
+                <dd className="font-medium">{payment.reference}</dd>
+              </div>
+            ) : null}
+            {payment.paymentType === "posted" && payment.shopAddress ? (
+              <div>
+                <dt className="text-sm text-muted-foreground">Shop address</dt>
+                <dd className="font-medium">{payment.shopAddress}</dd>
+              </div>
+            ) : null}
+            {payment.paymentType === "posted" && payment.debitCardMaskedNumber ? (
+              <div>
+                <dt className="text-sm text-muted-foreground">Debit card</dt>
+                <dd className="font-medium">{payment.debitCardMaskedNumber}</dd>
+              </div>
+            ) : null}
             {payment.paymentType === "pending" ? (
               <div>
                 <dt className="text-sm text-muted-foreground">Execution date</dt>

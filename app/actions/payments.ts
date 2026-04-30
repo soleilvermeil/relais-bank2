@@ -83,6 +83,7 @@ export async function confirmPayOperation(formData: FormData) {
   const executionDate = String(formData.get("executionDate") ?? "").trim();
   const beneficiaryIban = parseAndValidateIban(formData.get("beneficiaryIban"));
   const beneficiaryBicRaw = String(formData.get("beneficiaryBic") ?? "").trim();
+  const reference = String(formData.get("reference") ?? "").trim();
   const beneficiaryBic =
     paymentType === "international"
       ? parseAndValidateBic(beneficiaryBicRaw)
@@ -104,11 +105,14 @@ export async function confirmPayOperation(formData: FormData) {
     amount,
     currency: "CHF",
     executionDate,
-    reference: beneficiaryIban,
+    reference,
     paymentDetails: {
       paymentType,
       beneficiaryIban,
       beneficiaryBic,
+    },
+    transactionDetails: {
+      destinationIban: beneficiaryIban,
     },
   };
 

@@ -15,6 +15,7 @@ type Props = {
     paymentType?: string;
     beneficiaryIban?: string;
     beneficiaryBic?: string;
+    reference?: string;
   }>;
 };
 
@@ -34,6 +35,7 @@ export default async function PayFormPage({ searchParams }: Props) {
     params.paymentType === "international" ? "international" : "domestic";
   const defaultBeneficiaryIban = params.beneficiaryIban ?? "";
   const defaultBeneficiaryBic = params.beneficiaryBic ?? "";
+  const defaultReference = params.reference ?? "";
   const sourceOptions = [
     ...accounts.map((account) => ({
       value: `account:${account.id}`,
@@ -83,6 +85,19 @@ export default async function PayFormPage({ searchParams }: Props) {
               defaultBeneficiaryIban={defaultBeneficiaryIban}
               defaultBeneficiaryBic={defaultBeneficiaryBic}
             />
+
+            <div className="space-y-2">
+              <Label htmlFor="reference">Reference (optional)</Label>
+              <Input
+                id="reference"
+                name="reference"
+                defaultValue={defaultReference}
+                placeholder="Invoice or bill reference"
+              />
+              <p className="text-sm text-muted-foreground">
+                Example: RF18 5390 0754 7034
+              </p>
+            </div>
 
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-2">

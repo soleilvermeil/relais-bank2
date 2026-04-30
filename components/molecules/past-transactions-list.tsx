@@ -43,6 +43,23 @@ function groupByDate(transactions: PastTransaction[]) {
   return Object.entries(groups);
 }
 
+function getTransactionMeta(transaction: PastTransaction) {
+  const parts: string[] = [];
+  if (transaction.destinationIban) {
+    parts.push(`IBAN ${transaction.destinationIban}`);
+  }
+  if (transaction.reference) {
+    parts.push(`Ref ${transaction.reference}`);
+  }
+  if (transaction.shopAddress) {
+    parts.push(transaction.shopAddress);
+  }
+  if (transaction.debitCardMaskedNumber) {
+    parts.push(`Card ${transaction.debitCardMaskedNumber}`);
+  }
+  return parts.join(" - ");
+}
+
 export function PastTransactionsList({ transactions }: Props) {
   const groups = groupByDate(transactions);
 
@@ -64,22 +81,62 @@ export function PastTransactionsList({ transactions }: Props) {
           <div className="space-y-2">
             {items.map((transaction) => (
               <article key={transaction.id} className="py-1">
-                {transaction.href ? (
-                  <Link href={transaction.href} className="block rounded-full hover:bg-muted/50">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-foreground">
+                {(() => {
+                  const meta = getTransactionMeta(transaction);
+                  return transaction.href ? (
+                    <Link href={transaction.href} className="block rounded-xl hover:bg-muted/50 px-2 py-1">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex min-w-0 items-start gap-2">
+                          <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-foreground">
+                            {(() => {
+                              const Icon = getIconForTransaction(transaction);
+                              return <Icon className="h-4 w-4" aria-hidden />;
+                            })()}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-foreground">
+                              {transaction.label}
+                            </p>
+                            {meta ? (
+                              <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                                {meta}
+                              </p>
+                            ) : null}
+                          </div>
+                        </div>
+                        <p
+                          className={`text-sm font-semibold tabular-nums mr-2 ${
+                            transaction.direction === "incoming"
+                              ? "text-green-600"
+                              : "text-foreground"
+                          }`}
+                        >
+                          {formatSignedChf(transaction.amount, transaction.direction)}
+                        </p>
+                      </div>
+                    </Link>
+                  ) : (
+                    <div className="flex flex-wrap items-center justify-between gap-2 px-2 py-1">
+                      <div className="flex min-w-0 items-start gap-2">
+                        <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-foreground">
                           {(() => {
                             const Icon = getIconForTransaction(transaction);
                             return <Icon className="h-4 w-4" aria-hidden />;
                           })()}
                         </span>
-                        <p className="text-sm font-medium text-foreground">
-                          {transaction.label}
-                        </p>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground">
+                            {transaction.label}
+                          </p>
+                          {meta ? (
+                            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                              {meta}
+                            </p>
+                          ) : null}
+                        </div>
                       </div>
                       <p
-                        className={`text-sm font-semibold tabular-nums mr-4 ${
+                        className={`text-sm font-semibold tabular-nums ${
                           transaction.direction === "incoming"
                             ? "text-green-600"
                             : "text-foreground"
@@ -88,31 +145,8 @@ export function PastTransactionsList({ transactions }: Props) {
                         {formatSignedChf(transaction.amount, transaction.direction)}
                       </p>
                     </div>
-                  </Link>
-                ) : (
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex min-w-0 items-center gap-2">
-                      <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-foreground">
-                        {(() => {
-                          const Icon = getIconForTransaction(transaction);
-                          return <Icon className="h-4 w-4" aria-hidden />;
-                        })()}
-                      </span>
-                      <p className="text-sm font-medium text-foreground">
-                        {transaction.label}
-                      </p>
-                    </div>
-                    <p
-                      className={`text-sm font-semibold tabular-nums ${
-                        transaction.direction === "incoming"
-                          ? "text-green-600"
-                          : "text-foreground"
-                      }`}
-                    >
-                      {formatSignedChf(transaction.amount, transaction.direction)}
-                    </p>
-                  </div>
-                )}
+                  );
+                })()}
               </article>
             ))}
           </div>
