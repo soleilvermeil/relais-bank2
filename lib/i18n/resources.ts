@@ -16,6 +16,8 @@ export const resources = {
         executionDate: "Execution date",
         continue: "Continue",
         backToEdit: "Back to edit",
+        yes: "Yes",
+        no: "No",
       },
       header: {
         navMain: "Main",
@@ -126,6 +128,17 @@ export const resources = {
         beneficiaryIban: "Beneficiary IBAN",
         reference: "Reference",
         makePayment: "Make payment",
+        immediateExecution: "Immediate execution",
+        immediateFee: "Immediate execution fee",
+        totalDebited: "Total debited",
+      },
+      paymentScheduling: {
+        immediateExecution: "Immediate execution",
+        immediateHintPay:
+          "Execute this payment now. A fee applies. Otherwise, choose a future execution date.",
+        immediateHintTransfer: "Execute this transfer now at no extra cost, or schedule a future date.",
+        immediateFeePay: "Fee: CHF {{fee}}",
+        executedToday: "Today (immediate)",
       },
       transferForm: {
         title: "Transfer",
@@ -161,12 +174,16 @@ export const resources = {
         cadence: "Cadence",
         nextExecutionDate: "Next execution date",
         backToPayments: "Back to payments",
+        paymentAmount: "Payment amount",
+        immediateExecutionFee: "Immediate execution fee",
+        totalDebited: "Total debited",
       },
       pastTransactions: {
         none: "No past transactions available.",
         iban: "IBAN {{value}}",
         reference: "Ref {{value}}",
         card: "Card {{value}}",
+        immediateFee: "Immediate fee CHF {{value}}",
       },
       products: {
         accountNumber: "Account number: {{id}}",
@@ -198,6 +215,8 @@ export const resources = {
         executionDate: "Date d'exécution",
         continue: "Continuer",
         backToEdit: "Retour à la modification",
+        yes: "Oui",
+        no: "Non",
       },
       header: {
         navMain: "Principal",
@@ -315,6 +334,18 @@ export const resources = {
         beneficiaryIban: "IBAN du bénéficiaire",
         reference: "Référence",
         makePayment: "Effectuer le paiement",
+        immediateExecution: "Exécution immédiate",
+        immediateFee: "Frais d'exécution immédiate",
+        totalDebited: "Total débité",
+      },
+      paymentScheduling: {
+        immediateExecution: "Exécution immédiate",
+        immediateHintPay:
+          "Effectuer ce paiement maintenant. Des frais s'appliquent. Sinon, choisissez une date d'exécution ultérieure.",
+        immediateHintTransfer:
+          "Effectuer ce transfert immédiatement sans frais supplémentaires, ou planifiez une date ultérieure.",
+        immediateFeePay: "Frais : CHF {{fee}}",
+        executedToday: "Aujourd'hui (immédiat)",
       },
       transferForm: {
         title: "Transférer",
@@ -350,12 +381,16 @@ export const resources = {
         cadence: "Fréquence",
         nextExecutionDate: "Prochaine date d'exécution",
         backToPayments: "Retour aux paiements",
+        paymentAmount: "Montant du paiement",
+        immediateExecutionFee: "Frais d'exécution immédiate",
+        totalDebited: "Total débité",
       },
       pastTransactions: {
         none: "Aucune transaction passée disponible.",
         iban: "IBAN {{value}}",
         reference: "Réf. {{value}}",
         card: "Carte {{value}}",
+        immediateFee: "Frais immédiats CHF {{value}}",
       },
       products: {
         accountNumber: "Numéro de compte : {{id}}",

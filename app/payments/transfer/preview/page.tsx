@@ -6,6 +6,7 @@ import { Container } from "@/components/atoms/container";
 import { SectionTitle } from "@/components/atoms/section-title";
 import { accounts, creditCards } from "@/data/banking-mock";
 import { isAuthenticated } from "@/lib/auth";
+import { isExecutionDateAtLeastTomorrow } from "@/lib/payment-execution-date";
 import { getLocalizedAccountNameById } from "@/lib/i18n/account-names";
 import { getServerT } from "@/lib/i18n/server";
 
@@ -16,6 +17,7 @@ type Props = {
     amount?: string;
     executionDate?: string;
     reference?: string;
+    immediateExecution?: string;
   }>;
 };
 
@@ -35,6 +37,7 @@ export default async function TransferPreviewPage({ searchParams }: Props) {
   const amount = required(params.amount);
   const executionDate = required(params.executionDate);
   const reference = required(params.reference);
+  const immediateExecution = params.immediateExecution !== "0";
   const sourceLabel = (() => {
     const [entityType, entityId] = sourceRef.split(":", 2);
     if (!entityType || !entityId) {
@@ -63,6 +66,10 @@ export default async function TransferPreviewPage({ searchParams }: Props) {
     redirect("/payments/transfer");
   }
 
+  if (!immediateExecution && !isExecutionDateAtLeastTomorrow(executionDate)) {
+    redirect("/payments/transfer");
+  }
+
   return (
     <Container>
       <main id="main-content" className="space-y-8">
@@ -88,8 +95,18 @@ export default async function TransferPreviewPage({ searchParams }: Props) {
               <dd className="font-medium">CHF {Number(amount).toFixed(2)}</dd>
             </div>
             <div>
+              <dt className="text-sm text-muted-foreground">{t("payPreview.immediateExecution")}</dt>
+              <dd className="font-medium">
+                {immediateExecution ? t("common.yes") : t("common.no")}
+              </dd>
+            </div>
+            <div>
               <dt className="text-sm text-muted-foreground">{t("common.executionDate")}</dt>
-              <dd className="font-medium">{executionDate}</dd>
+              <dd className="font-medium">
+                {immediateExecution
+                  ? t("paymentScheduling.executedToday")
+                  : executionDate}
+              </dd>
             </div>
             <div>
               <dt className="text-sm text-muted-foreground">{t("transferPreview.note")}</dt>
@@ -103,9 +120,14 @@ export default async function TransferPreviewPage({ searchParams }: Props) {
             <input type="hidden" name="amount" value={amount} />
             <input type="hidden" name="executionDate" value={executionDate} />
             <input type="hidden" name="reference" value={reference} />
+            <input
+              type="hidden"
+              name="immediateExecution"
+              value={immediateExecution ? "1" : "0"}
+            />
             <Button type="submit">{t("transferPreview.makeTransfer")}</Button>
             <Link
-              href={`/payments/transfer?source=${encodeURIComponent(sourceRef)}`}
+              href={`/payments/transfer?source=${encodeURIComponent(sourceRef)}&immediateExecution=${immediateExecution ? "1" : "0"}`}
               className="inline-flex min-h-11 items-center justify-center rounded-full border border-card-border bg-muted px-5 py-2.5 text-base font-medium text-foreground"
             >
               {t("common.backToEdit")}

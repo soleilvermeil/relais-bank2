@@ -17,6 +17,10 @@ export type PaymentOperationDelta = {
   amount: number;
   currency: "CHF";
   executionDate: string;
+  /** When true, order is executed immediately and appears as posted; scheduled date is ignored for classification. */
+  immediateExecution?: boolean;
+  /** Extra CHF charged for immediate pay (not transfers). */
+  immediateFeeChf?: number;
   reference: string;
   paymentDetails?: {
     paymentType: "domestic" | "international";

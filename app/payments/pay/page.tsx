@@ -4,10 +4,15 @@ import { Button } from "@/components/atoms/button";
 import { Container } from "@/components/atoms/container";
 import { Input } from "@/components/atoms/input";
 import { Label } from "@/components/atoms/label";
+import { PaymentAmountAndScheduling } from "@/components/molecules/payment-amount-and-scheduling";
 import { PayBeneficiaryFields } from "@/components/molecules/pay-beneficiary-fields";
 import { ProductSelect } from "@/components/molecules/product-select";
 import { SectionTitle } from "@/components/atoms/section-title";
 import { isAuthenticated } from "@/lib/auth";
+import {
+  getTomorrowLocalIso,
+  isExecutionDateAtLeastTomorrow,
+} from "@/lib/payment-execution-date";
 import { getLocalizedAccountNameById } from "@/lib/i18n/account-names";
 import { getServerT } from "@/lib/i18n/server";
 
@@ -21,6 +26,7 @@ type Props = {
     recipientName?: string;
     amount?: string;
     executionDate?: string;
+    immediateExecution?: string;
   }>;
 };
 
@@ -44,7 +50,13 @@ export default async function PayFormPage({ searchParams }: Props) {
   const defaultReference = params.reference ?? "";
   const defaultRecipientName = params.recipientName ?? "";
   const defaultAmount = params.amount ?? "";
-  const defaultExecutionDate = params.executionDate ?? "";
+  const tomorrowIso = getTomorrowLocalIso();
+  const rawExecutionDate = params.executionDate?.trim() ?? "";
+  const defaultExecutionDate =
+    rawExecutionDate && isExecutionDateAtLeastTomorrow(rawExecutionDate)
+      ? rawExecutionDate
+      : tomorrowIso;
+  const defaultImmediate = params.immediateExecution === "1";
   const sourceOptions = [
     ...accounts.map((account) => ({
       value: `account:${account.id}`,
@@ -114,30 +126,13 @@ export default async function PayFormPage({ searchParams }: Props) {
               </p>
             </div>
 
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="amount">{t("payForm.amount")}</Label>
-                <Input
-                  id="amount"
-                  name="amount"
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  defaultValue={defaultAmount}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="executionDate">{t("common.executionDate")}</Label>
-                <Input
-                  id="executionDate"
-                  name="executionDate"
-                  type="date"
-                  defaultValue={defaultExecutionDate}
-                  required
-                />
-              </div>
-            </div>
+            <PaymentAmountAndScheduling
+              mode="pay"
+              amountDefaultValue={defaultAmount}
+              tomorrowIso={tomorrowIso}
+              executionDefaultValue={defaultExecutionDate}
+              defaultImmediate={defaultImmediate}
+            />
 
             <div className="flex flex-wrap gap-3">
               <Button type="submit">{t("common.continue")}</Button>

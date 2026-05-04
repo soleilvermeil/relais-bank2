@@ -59,6 +59,13 @@ function getTransactionMeta(transaction: PastTransaction, t: TFunction) {
   if (transaction.debitCardMaskedNumber) {
     parts.push(t("pastTransactions.card", { value: transaction.debitCardMaskedNumber }));
   }
+  if (transaction.immediateFeeChf && transaction.immediateFeeChf > 0) {
+    parts.push(
+      t("pastTransactions.immediateFee", {
+        value: chfFormatter.format(transaction.immediateFeeChf),
+      }),
+    );
+  }
   return parts.join(" - ");
 }
 

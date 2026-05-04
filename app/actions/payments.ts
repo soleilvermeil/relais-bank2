@@ -2,6 +2,11 @@
 
 import { redirect } from "next/navigation";
 import {
+  assertExecutionDateAtLeastTomorrow,
+  formatSwissLocalDate,
+} from "@/lib/payment-execution-date";
+import { PAY_IMMEDIATE_FEE_CHF } from "@/lib/payment-immediate";
+import {
   appendPaymentOperationDelta,
   resetPaymentOperationDeltas,
   type PaymentOperationDelta,
@@ -76,11 +81,21 @@ function parseAmount(value: FormDataEntryValue | null): number {
   return parsed;
 }
 
+function parseImmediateExecution(formData: FormData): boolean {
+  return String(formData.get("immediateExecution") ?? "0").trim() === "1";
+}
+
 export async function confirmPayOperation(formData: FormData) {
   const sourceRef = parseSourceRef(String(formData.get("sourceRef") ?? ""));
   const paymentType = parsePaymentType(formData.get("paymentType"));
   const recipientName = String(formData.get("recipientName") ?? "").trim();
-  const executionDate = String(formData.get("executionDate") ?? "").trim();
+  const immediateExecution = parseImmediateExecution(formData);
+  let executionDate = String(formData.get("executionDate") ?? "").trim();
+  if (immediateExecution) {
+    executionDate = formatSwissLocalDate(new Date());
+  } else {
+    assertExecutionDateAtLeastTomorrow(executionDate);
+  }
   const beneficiaryIban = parseAndValidateIban(formData.get("beneficiaryIban"));
   const beneficiaryBicRaw = String(formData.get("beneficiaryBic") ?? "").trim();
   const reference = String(formData.get("reference") ?? "").trim();
@@ -105,6 +120,8 @@ export async function confirmPayOperation(formData: FormData) {
     amount,
     currency: "CHF",
     executionDate,
+    immediateExecution,
+    immediateFeeChf: immediateExecution ? PAY_IMMEDIATE_FEE_CHF : undefined,
     reference,
     paymentDetails: {
       paymentType,
@@ -123,7 +140,13 @@ export async function confirmPayOperation(formData: FormData) {
 export async function confirmTransferOperation(formData: FormData) {
   const sourceRef = parseSourceRef(String(formData.get("sourceRef") ?? ""));
   const destinationAccountId = String(formData.get("destinationAccountId") ?? "").trim();
-  const executionDate = String(formData.get("executionDate") ?? "").trim();
+  const immediateExecution = parseImmediateExecution(formData);
+  let executionDate = String(formData.get("executionDate") ?? "").trim();
+  if (immediateExecution) {
+    executionDate = formatSwissLocalDate(new Date());
+  } else {
+    assertExecutionDateAtLeastTomorrow(executionDate);
+  }
   const reference = String(formData.get("reference") ?? "").trim();
   const amount = parseAmount(formData.get("amount"));
 
@@ -139,6 +162,7 @@ export async function confirmTransferOperation(formData: FormData) {
     amount,
     currency: "CHF",
     executionDate,
+    immediateExecution,
     reference,
   };
 

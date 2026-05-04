@@ -76,10 +76,42 @@ export default async function PaymentDetailPage({ params }: Props) {
                     : t("paymentDetail.postedTransaction")}
               </dd>
             </div>
-            <div>
-              <dt className="text-sm text-muted-foreground">{t("common.amount")}</dt>
-              <dd className="font-medium">CHF {chfFormatter.format(payment.amount)}</dd>
-            </div>
+            {payment.paymentType === "posted" &&
+            payment.immediateExecutionFeeChf != null &&
+            payment.immediateExecutionFeeChf > 0 ? (
+              <>
+                <div>
+                  <dt className="text-sm text-muted-foreground">
+                    {t("paymentDetail.paymentAmount")}
+                  </dt>
+                  <dd className="font-medium">
+                    CHF{" "}
+                    {chfFormatter.format(
+                      payment.amount - payment.immediateExecutionFeeChf,
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-muted-foreground">
+                    {t("paymentDetail.immediateExecutionFee")}
+                  </dt>
+                  <dd className="font-medium">
+                    CHF {chfFormatter.format(payment.immediateExecutionFeeChf)}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-muted-foreground">
+                    {t("paymentDetail.totalDebited")}
+                  </dt>
+                  <dd className="font-medium">CHF {chfFormatter.format(payment.amount)}</dd>
+                </div>
+              </>
+            ) : (
+              <div>
+                <dt className="text-sm text-muted-foreground">{t("common.amount")}</dt>
+                <dd className="font-medium">CHF {chfFormatter.format(payment.amount)}</dd>
+              </div>
+            )}
             <div>
               <dt className="text-sm text-muted-foreground">{t("common.source")}</dt>
               <dd className="font-medium">{sourceLabel}</dd>

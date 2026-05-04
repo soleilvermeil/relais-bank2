@@ -6,6 +6,8 @@ import { Container } from "@/components/atoms/container";
 import { SectionTitle } from "@/components/atoms/section-title";
 import { accounts, creditCards } from "@/data/banking-mock";
 import { isAuthenticated } from "@/lib/auth";
+import { isExecutionDateAtLeastTomorrow } from "@/lib/payment-execution-date";
+import { PAY_IMMEDIATE_FEE_CHF } from "@/lib/payment-immediate";
 import { getLocalizedAccountNameById } from "@/lib/i18n/account-names";
 import { getServerT } from "@/lib/i18n/server";
 
@@ -19,6 +21,7 @@ type Props = {
     reference?: string;
     amount?: string;
     executionDate?: string;
+    immediateExecution?: string;
   }>;
 };
 
@@ -41,6 +44,7 @@ export default async function PayPreviewPage({ searchParams }: Props) {
   const reference = required(params.reference);
   const amount = required(params.amount);
   const executionDate = required(params.executionDate);
+  const immediateExecution = params.immediateExecution === "1";
   const isDomestic = paymentType === "domestic";
   const isInternational = paymentType === "international";
   const sourceLabel = (() => {
@@ -72,6 +76,14 @@ export default async function PayPreviewPage({ searchParams }: Props) {
   ) {
     redirect("/payments/pay");
   }
+
+  if (!immediateExecution && !isExecutionDateAtLeastTomorrow(executionDate)) {
+    redirect("/payments/pay");
+  }
+
+  const amountNum = Number(amount);
+  const immediateFee = immediateExecution ? PAY_IMMEDIATE_FEE_CHF : 0;
+  const totalChf = amountNum + immediateFee;
 
   return (
     <Container>
@@ -117,12 +129,35 @@ export default async function PayPreviewPage({ searchParams }: Props) {
             ) : null}
             <div>
               <dt className="text-sm text-muted-foreground">{t("common.amount")}</dt>
-              <dd className="font-medium">CHF {Number(amount).toFixed(2)}</dd>
+              <dd className="font-medium">CHF {amountNum.toFixed(2)}</dd>
             </div>
-            <div>
-              <dt className="text-sm text-muted-foreground">{t("common.executionDate")}</dt>
-              <dd className="font-medium">{executionDate}</dd>
-            </div>
+            {immediateExecution ? (
+              <>
+                <div>
+                  <dt className="text-sm text-muted-foreground">{t("payPreview.immediateExecution")}</dt>
+                  <dd className="font-medium">{t("common.yes")}</dd>
+                </div>
+                {immediateFee > 0 ? (
+                  <div>
+                    <dt className="text-sm text-muted-foreground">{t("payPreview.immediateFee")}</dt>
+                    <dd className="font-medium">CHF {immediateFee.toFixed(2)}</dd>
+                  </div>
+                ) : null}
+                <div>
+                  <dt className="text-sm text-muted-foreground">{t("payPreview.totalDebited")}</dt>
+                  <dd className="font-medium">CHF {totalChf.toFixed(2)}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-muted-foreground">{t("common.executionDate")}</dt>
+                  <dd className="font-medium">{t("paymentScheduling.executedToday")}</dd>
+                </div>
+              </>
+            ) : (
+              <div>
+                <dt className="text-sm text-muted-foreground">{t("common.executionDate")}</dt>
+                <dd className="font-medium">{executionDate}</dd>
+              </div>
+            )}
           </dl>
 
           <form action={confirmPayOperation} className="mt-6 flex flex-wrap gap-3">
@@ -134,9 +169,14 @@ export default async function PayPreviewPage({ searchParams }: Props) {
             <input type="hidden" name="reference" value={reference} />
             <input type="hidden" name="amount" value={amount} />
             <input type="hidden" name="executionDate" value={executionDate} />
+            <input
+              type="hidden"
+              name="immediateExecution"
+              value={immediateExecution ? "1" : "0"}
+            />
             <Button type="submit">{t("payPreview.makePayment")}</Button>
             <Link
-              href={`/payments/pay?source=${encodeURIComponent(sourceRef)}&recipientName=${encodeURIComponent(recipientName)}&paymentType=${encodeURIComponent(paymentType)}&beneficiaryIban=${encodeURIComponent(beneficiaryIban)}&beneficiaryBic=${encodeURIComponent(beneficiaryBic)}&reference=${encodeURIComponent(reference)}&amount=${encodeURIComponent(amount)}&executionDate=${encodeURIComponent(executionDate)}`}
+              href={`/payments/pay?source=${encodeURIComponent(sourceRef)}&recipientName=${encodeURIComponent(recipientName)}&paymentType=${encodeURIComponent(paymentType)}&beneficiaryIban=${encodeURIComponent(beneficiaryIban)}&beneficiaryBic=${encodeURIComponent(beneficiaryBic)}&reference=${encodeURIComponent(reference)}&amount=${encodeURIComponent(amount)}&executionDate=${encodeURIComponent(executionDate)}&immediateExecution=${immediateExecution ? "1" : "0"}`}
               className="inline-flex min-h-11 items-center justify-center rounded-full border border-card-border bg-muted px-5 py-2.5 text-base font-medium text-foreground"
             >
               {t("common.backToEdit")}

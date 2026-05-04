@@ -4,14 +4,16 @@ import { Button } from "@/components/atoms/button";
 import { Container } from "@/components/atoms/container";
 import { Input } from "@/components/atoms/input";
 import { Label } from "@/components/atoms/label";
+import { PaymentAmountAndScheduling } from "@/components/molecules/payment-amount-and-scheduling";
 import { ProductSelect } from "@/components/molecules/product-select";
 import { SectionTitle } from "@/components/atoms/section-title";
 import { isAuthenticated } from "@/lib/auth";
+import { getTomorrowLocalIso } from "@/lib/payment-execution-date";
 import { getLocalizedAccountNameById } from "@/lib/i18n/account-names";
 import { getServerT } from "@/lib/i18n/server";
 
 type Props = {
-  searchParams: Promise<{ source?: string }>;
+  searchParams: Promise<{ source?: string; immediateExecution?: string }>;
 };
 
 const chfFormatter = new Intl.NumberFormat("de-CH", {
@@ -27,6 +29,8 @@ export default async function TransferFormPage({ searchParams }: Props) {
 
   const params = await searchParams;
   const defaultSource = params.source ?? "";
+  const tomorrowIso = getTomorrowLocalIso();
+  const defaultImmediate = params.immediateExecution !== "0";
   const sourceOptions = [
     ...accounts.map((account) => ({
       value: `account:${account.id}`,
@@ -83,16 +87,13 @@ export default async function TransferFormPage({ searchParams }: Props) {
               />
             </div>
 
-            <div className="grid gap-5 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="amount">{t("transferForm.amount")}</Label>
-                <Input id="amount" name="amount" type="number" min="0.01" step="0.01" required />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="executionDate">{t("common.executionDate")}</Label>
-                <Input id="executionDate" name="executionDate" type="date" required />
-              </div>
-            </div>
+            <PaymentAmountAndScheduling
+              mode="transfer"
+              amountDefaultValue=""
+              tomorrowIso={tomorrowIso}
+              executionDefaultValue={tomorrowIso}
+              defaultImmediate={defaultImmediate}
+            />
 
             <div className="space-y-2">
               <Label htmlFor="reference">{t("transferForm.note")}</Label>

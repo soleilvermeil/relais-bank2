@@ -1,4 +1,9 @@
 import {
+  isExecutionDateStrictlyBeforeToday,
+  isExecutionDateTodayOrLater,
+  parseExecutionDate,
+} from "@/lib/payment-execution-date";
+import {
   readPaymentOperationDeltas,
   type PaymentOperationDelta,
 } from "@/lib/payment-cookies";
@@ -60,6 +65,8 @@ export type StandingOrderRecord = MoneyMovementBase & {
 
 export type PostedTransactionRecord = MoneyMovementBase & {
   bookingDate: string;
+  /** Set for immediate pay (fee shown in UI). */
+  immediateFeeChf?: number;
 };
 
 export type TransactionDirection = "incoming" | "outgoing";
@@ -127,6 +134,8 @@ export type PaymentDetail =
       destinationIban?: string;
       shopAddress?: string;
       debitCardMaskedNumber?: string;
+      /** Included in amount; shown separately in details when present. */
+      immediateExecutionFeeChf?: number;
     };
 
 export type ConfirmedOperation = {
@@ -149,6 +158,8 @@ export type ConfirmedOperation = {
     shopAddress?: string;
     debitCardMaskedNumber?: string;
   };
+  immediateExecution?: boolean;
+  immediateFeeChf?: number;
 };
 
 export type PastTransaction = {
@@ -165,6 +176,7 @@ export type PastTransaction = {
   shopAddress?: string;
   debitCardMaskedNumber?: string;
   href?: string;
+  immediateFeeChf?: number;
 };
 
 export const accounts: Account[] = [
@@ -358,6 +370,8 @@ function toConfirmedOperation(
     reference: delta.reference,
     paymentDetails: delta.paymentDetails,
     transactionDetails: delta.transactionDetails,
+    immediateExecution: delta.immediateExecution === true,
+    immediateFeeChf: delta.immediateFeeChf,
   };
 }
 
@@ -380,10 +394,11 @@ function toPendingRecordFromOperation(
 function toPostedRecordFromOperation(
   operation: ConfirmedOperation,
 ): PostedTransactionRecord {
+  const fee = operation.immediateFeeChf ?? 0;
   return {
     id: `posted-${operation.id}`,
     bookingDate: operation.executionDate,
-    amount: operation.amount,
+    amount: operation.amount + fee,
     sourceRef: operation.sourceRef,
     destinationRef: operation.destinationRef,
     reference: operation.reference,
@@ -392,6 +407,7 @@ function toPostedRecordFromOperation(
       operation.paymentDetails?.beneficiaryIban,
     shopAddress: operation.transactionDetails?.shopAddress,
     debitCardMaskedNumber: operation.transactionDetails?.debitCardMaskedNumber,
+    immediateFeeChf: operation.immediateFeeChf,
   };
 }
 
@@ -400,9 +416,20 @@ async function getConfirmedOperationState() {
   return deltas.map(toConfirmedOperation);
 }
 
-function parseSwissDate(value: string) {
-  const [day, month, year] = value.split(".").map(Number);
-  return new Date(year, month - 1, day);
+function userOperationsPending(operations: ConfirmedOperation[]) {
+  return operations.filter(
+    (op) =>
+      !op.immediateExecution &&
+      isExecutionDateTodayOrLater(op.executionDate),
+  );
+}
+
+function userOperationsPosted(operations: ConfirmedOperation[]) {
+  return operations.filter(
+    (op) =>
+      op.immediateExecution === true ||
+      isExecutionDateStrictlyBeforeToday(op.executionDate),
+  );
 }
 
 function getEndOfNextMonth(reference: Date) {
@@ -519,7 +546,9 @@ function toStandingOrder(
 
 export async function getPendingOrders(): Promise<PendingOrder[]> {
   const operations = await getConfirmedOperationState();
-  const operationPending = operations.map(toPendingRecordFromOperation);
+  const operationPending = userOperationsPending(operations).map(
+    toPendingRecordFromOperation,
+  );
   return [...operationPending, ...basePendingOrderRecords].map((record) =>
     toPendingOrder(record),
   );
@@ -536,7 +565,7 @@ export async function getPaymentDetail(
   if (paymentType === "pending") {
     const operations = await getConfirmedOperationState();
     const mergedPending = [
-      ...operations.map(toPendingRecordFromOperation),
+      ...userOperationsPending(operations).map(toPendingRecordFromOperation),
       ...basePendingOrderRecords,
     ];
     const payment = mergedPending.find((item) => item.id === paymentId);
@@ -579,7 +608,7 @@ export async function getPaymentDetail(
 
   const operations = await getConfirmedOperationState();
   const mergedPosted = [
-    ...operations.map(toPostedRecordFromOperation),
+    ...userOperationsPosted(operations).map(toPostedRecordFromOperation),
     ...basePostedTransactionRecords,
   ];
   const posted = mergedPosted.find((item) => item.id === paymentId);
@@ -599,6 +628,7 @@ export async function getPaymentDetail(
     destinationIban: posted.destinationIban ?? getEntityIban(posted.destinationRef),
     shopAddress: posted.shopAddress ?? getEntityAddress(posted.destinationRef),
     debitCardMaskedNumber: posted.debitCardMaskedNumber,
+    immediateExecutionFeeChf: posted.immediateFeeChf,
   };
 }
 
@@ -609,7 +639,7 @@ export async function getPendingOrdersUntilNextMonth(
 ) {
   const operations = await getConfirmedOperationState();
   const mergedPending = [
-    ...operations.map(toPendingRecordFromOperation),
+    ...userOperationsPending(operations).map(toPendingRecordFromOperation),
     ...basePendingOrderRecords,
   ];
   const perspectiveRef: EntityRef = { entityType: sourceType, entityId: sourceId };
@@ -619,7 +649,8 @@ export async function getPendingOrdersUntilNextMonth(
       const isRelated =
         refsEqual(order.sourceRef, perspectiveRef) ||
         refsEqual(order.destinationRef, perspectiveRef);
-      return isRelated && parseSwissDate(order.executionDate) <= cutoffDate;
+      const exec = parseExecutionDate(order.executionDate);
+      return isRelated && exec !== null && exec <= cutoffDate;
     })
     .map((order) => toPendingOrder(order, perspectiveRef));
 }
@@ -630,7 +661,7 @@ export async function getPastTransactionsForSource(
 ): Promise<PastTransaction[]> {
   const operations = await getConfirmedOperationState();
   const mergedPosted = [
-    ...operations.map(toPostedRecordFromOperation),
+    ...userOperationsPosted(operations).map(toPostedRecordFromOperation),
     ...basePostedTransactionRecords,
   ];
   const perspectiveRef: EntityRef = { entityType: sourceType, entityId: sourceId };
@@ -661,6 +692,7 @@ export async function getPastTransactionsForSource(
       destinationIban: record.destinationIban ?? getEntityIban(record.destinationRef),
       shopAddress: record.shopAddress ?? getEntityAddress(record.destinationRef),
       debitCardMaskedNumber: record.debitCardMaskedNumber,
+      immediateFeeChf: record.immediateFeeChf,
       href: `/payments/posted/${encodeURIComponent(record.id)}`,
     }));
 }

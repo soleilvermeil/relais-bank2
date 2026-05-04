@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { getTomorrowLocalIso } from "@/lib/payment-execution-date";
 import { parseSwissQrBillPayload } from "@/lib/swiss-qr-bill/parse";
 
 type Html5QrcodeInstance = import("html5-qrcode").Html5Qrcode;
@@ -11,13 +12,6 @@ type Html5QrcodeInstance = import("html5-qrcode").Html5Qrcode;
 type Props = {
   defaultSourceRef: string;
 };
-
-function toIsoDate(value: Date) {
-  const year = value.getFullYear();
-  const month = String(value.getMonth() + 1).padStart(2, "0");
-  const day = String(value.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
 
 export function PaymentQrScanner({ defaultSourceRef }: Props) {
   const { t } = useTranslation();
@@ -48,7 +42,7 @@ export function PaymentQrScanner({ defaultSourceRef }: Props) {
       isHandledRef.current = true;
       setError("");
 
-      const today = toIsoDate(new Date());
+      const executionDate = getTomorrowLocalIso();
       const sharedParams = new URLSearchParams({
         source: defaultSourceRef,
         sourceRef: defaultSourceRef,
@@ -58,7 +52,7 @@ export function PaymentQrScanner({ defaultSourceRef }: Props) {
         beneficiaryBic: parsed.beneficiaryBic,
         reference: parsed.reference,
         amount: parsed.amount,
-        executionDate: today,
+        executionDate,
       });
 
       if (parsed.shouldGoToPreview) {
