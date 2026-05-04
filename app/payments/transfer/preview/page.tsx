@@ -4,7 +4,9 @@ import { confirmTransferOperation } from "@/app/actions/payments";
 import { Button } from "@/components/atoms/button";
 import { Container } from "@/components/atoms/container";
 import { SectionTitle } from "@/components/atoms/section-title";
+import { accounts, creditCards } from "@/data/banking-mock";
 import { isAuthenticated } from "@/lib/auth";
+import { getLocalizedAccountNameById } from "@/lib/i18n/account-names";
 import { getServerT } from "@/lib/i18n/server";
 
 type Props = {
@@ -33,6 +35,29 @@ export default async function TransferPreviewPage({ searchParams }: Props) {
   const amount = required(params.amount);
   const executionDate = required(params.executionDate);
   const reference = required(params.reference);
+  const sourceLabel = (() => {
+    const [entityType, entityId] = sourceRef.split(":", 2);
+    if (!entityType || !entityId) {
+      return sourceRef;
+    }
+    if (entityType === "account") {
+      const account = accounts.find((item) => item.id === entityId);
+      return account
+        ? getLocalizedAccountNameById(account.id, t, account.name)
+        : sourceRef;
+    }
+    if (entityType === "card") {
+      const card = creditCards.find((item) => item.id === entityId);
+      return card?.name ?? sourceRef;
+    }
+    return sourceRef;
+  })();
+  const destinationLabel = (() => {
+    const destinationAccount = accounts.find((item) => item.id === destinationAccountId);
+    return destinationAccount
+      ? getLocalizedAccountNameById(destinationAccount.id, t, destinationAccount.name)
+      : destinationAccountId;
+  })();
 
   if (!sourceRef || !destinationAccountId || !amount || !executionDate) {
     redirect("/payments/transfer");
@@ -52,11 +77,11 @@ export default async function TransferPreviewPage({ searchParams }: Props) {
           <dl className="grid gap-4 sm:grid-cols-2">
             <div>
               <dt className="text-sm text-muted-foreground">{t("common.source")}</dt>
-              <dd className="font-medium">{sourceRef}</dd>
+              <dd className="font-medium">{sourceLabel}</dd>
             </div>
             <div>
               <dt className="text-sm text-muted-foreground">{t("transferPreview.destinationAccount")}</dt>
-              <dd className="font-medium">{destinationAccountId}</dd>
+              <dd className="font-medium">{destinationLabel}</dd>
             </div>
             <div>
               <dt className="text-sm text-muted-foreground">{t("common.amount")}</dt>
