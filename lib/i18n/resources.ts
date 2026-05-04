@@ -79,6 +79,16 @@ export const resources = {
         activeCount: "{{count}} active",
         monthlyNextExecution: "{{cadence}} - next execution",
       },
+      scanPage: {
+        title: "Scan QR-bill",
+        subtitle: "Use your camera to scan a Swiss QR-bill.",
+        instructions: "Align the QR code inside the frame. We will prefill your payment details.",
+        initializing: "Starting camera...",
+        invalidQrBill: "QR code detected, but this is not a valid Swiss QR-bill.",
+        permissionDenied:
+          "Camera access failed. Please allow camera permission and use HTTPS (or localhost), then try again.",
+        cancel: "Cancel",
+      },
       payForm: {
         title: "Pay",
         subtitle: "Create a payment order and continue to preview.",
@@ -254,6 +264,18 @@ export const resources = {
         standingOrders: "Ordres permanents",
         activeCount: "{{count}} actifs",
         monthlyNextExecution: "{{cadence}} - prochaine exécution",
+      },
+      scanPage: {
+        title: "Scanner une facture QR",
+        subtitle: "Utilisez votre caméra pour scanner une facture QR suisse.",
+        instructions:
+          "Alignez le code QR dans le cadre. Nous préremplirons les détails du paiement.",
+        initializing: "Démarrage de la caméra...",
+        invalidQrBill:
+          "Code QR détecté, mais ce n'est pas une facture QR suisse valide.",
+        permissionDenied:
+          "L'accès à la caméra a échoué. Autorisez la caméra et utilisez HTTPS (ou localhost), puis réessayez.",
+        cancel: "Annuler",
       },
       payForm: {
         title: "Payer",

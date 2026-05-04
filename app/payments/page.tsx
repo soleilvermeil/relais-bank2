@@ -24,7 +24,7 @@ export default async function PaymentsPage() {
       id: "scan",
       title: t("paymentsPage.actionScanTitle"),
       description: t("paymentsPage.actionScanDescription"),
-      href: undefined,
+      href: "/payments/scan",
       icon: QrCode,
     },
     {

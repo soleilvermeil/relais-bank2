@@ -18,6 +18,9 @@ type Props = {
     beneficiaryIban?: string;
     beneficiaryBic?: string;
     reference?: string;
+    recipientName?: string;
+    amount?: string;
+    executionDate?: string;
   }>;
 };
 
@@ -39,6 +42,9 @@ export default async function PayFormPage({ searchParams }: Props) {
   const defaultBeneficiaryIban = params.beneficiaryIban ?? "";
   const defaultBeneficiaryBic = params.beneficiaryBic ?? "";
   const defaultReference = params.reference ?? "";
+  const defaultRecipientName = params.recipientName ?? "";
+  const defaultAmount = params.amount ?? "";
+  const defaultExecutionDate = params.executionDate ?? "";
   const sourceOptions = [
     ...accounts.map((account) => ({
       value: `account:${account.id}`,
@@ -84,6 +90,7 @@ export default async function PayFormPage({ searchParams }: Props) {
                 id="recipientName"
                 name="recipientName"
                 required
+                defaultValue={defaultRecipientName}
                 placeholder={t("payForm.recipientPlaceholder")}
               />
             </div>
@@ -110,11 +117,25 @@ export default async function PayFormPage({ searchParams }: Props) {
             <div className="grid gap-5 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="amount">{t("payForm.amount")}</Label>
-                <Input id="amount" name="amount" type="number" min="0.01" step="0.01" required />
+                <Input
+                  id="amount"
+                  name="amount"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  defaultValue={defaultAmount}
+                  required
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="executionDate">{t("common.executionDate")}</Label>
-                <Input id="executionDate" name="executionDate" type="date" required />
+                <Input
+                  id="executionDate"
+                  name="executionDate"
+                  type="date"
+                  defaultValue={defaultExecutionDate}
+                  required
+                />
               </div>
             </div>
 

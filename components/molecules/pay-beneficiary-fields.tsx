@@ -3,38 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Label } from "@/components/atoms/label";
+import { formatIbanForDisplay, isValidIban, normalizeIban } from "@/lib/iban";
 
 type Props = {
   defaultPaymentType?: "domestic" | "international";
   defaultBeneficiaryIban?: string;
   defaultBeneficiaryBic?: string;
 };
-
-function formatIbanForDisplay(raw: string) {
-  const compact = raw.replace(/\s+/g, "").toUpperCase();
-  return compact.replace(/(.{4})/g, "$1 ").trim();
-}
-
-function normalizeIban(value: string) {
-  return value.replace(/\s+/g, "").toUpperCase();
-}
-
-function isValidIban(iban: string) {
-  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{10,30}$/.test(iban)) {
-    return false;
-  }
-
-  const rearranged = `${iban.slice(4)}${iban.slice(0, 4)}`;
-  let remainder = 0;
-  for (const char of rearranged) {
-    const piece =
-      char >= "A" && char <= "Z" ? String(char.charCodeAt(0) - 55) : char;
-    for (const digit of piece) {
-      remainder = (remainder * 10 + Number(digit)) % 97;
-    }
-  }
-  return remainder === 1;
-}
 
 function normalizeBic(value: string) {
   return value.replace(/\s+/g, "").toUpperCase();

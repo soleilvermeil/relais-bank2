@@ -117,7 +117,7 @@ export default async function PayPreviewPage({ searchParams }: Props) {
             <input type="hidden" name="executionDate" value={executionDate} />
             <Button type="submit">{t("payPreview.makePayment")}</Button>
             <Link
-              href={`/payments/pay?source=${encodeURIComponent(sourceRef)}&paymentType=${encodeURIComponent(paymentType)}&beneficiaryIban=${encodeURIComponent(beneficiaryIban)}&beneficiaryBic=${encodeURIComponent(beneficiaryBic)}&reference=${encodeURIComponent(reference)}`}
+              href={`/payments/pay?source=${encodeURIComponent(sourceRef)}&recipientName=${encodeURIComponent(recipientName)}&paymentType=${encodeURIComponent(paymentType)}&beneficiaryIban=${encodeURIComponent(beneficiaryIban)}&beneficiaryBic=${encodeURIComponent(beneficiaryBic)}&reference=${encodeURIComponent(reference)}&amount=${encodeURIComponent(amount)}&executionDate=${encodeURIComponent(executionDate)}`}
               className="inline-flex min-h-11 items-center justify-center rounded-full border border-card-border bg-muted px-5 py-2.5 text-base font-medium text-foreground"
             >
               {t("common.backToEdit")}
