@@ -43,6 +43,8 @@ export function PaymentQrScanner({ defaultSourceRef }: Props) {
       setError("");
 
       const executionDate = getTomorrowLocalIso();
+      const addr = parsed.creditorAddress;
+      const ref = parsed.reference;
       const sharedParams = new URLSearchParams({
         source: defaultSourceRef,
         sourceRef: defaultSourceRef,
@@ -50,7 +52,14 @@ export function PaymentQrScanner({ defaultSourceRef }: Props) {
         paymentType: parsed.paymentType,
         beneficiaryIban: parsed.beneficiaryIban,
         beneficiaryBic: parsed.beneficiaryBic,
-        reference: parsed.reference,
+        referenceType: ref.type,
+        reference: ref.value,
+        beneficiaryStreet: addr.street,
+        beneficiaryBuildingNumber: addr.buildingNumber,
+        beneficiaryPostalCode: addr.postalCode,
+        beneficiaryTown: addr.town,
+        beneficiaryCountry: addr.country,
+        notice: parsed.unstructuredMessage,
         amount: parsed.amount,
         executionDate,
       });

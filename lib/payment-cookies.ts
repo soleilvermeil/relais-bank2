@@ -1,4 +1,7 @@
 import { cookies } from "next/headers";
+import type { PaymentReferenceType, SwissAddress } from "@/lib/swiss-qr-bill/types";
+
+export type { PaymentReferenceType } from "@/lib/swiss-qr-bill/types";
 
 export const PAYMENT_OPERATIONS_COOKIE = "ebanking_operations";
 
@@ -22,14 +25,18 @@ export type PaymentOperationDelta = {
   /** Extra CHF charged for immediate pay (not transfers). */
   immediateFeeChf?: number;
   reference: string;
+  /** Omitted or unknown in legacy cookies: infer from `reference` when reading. */
+  referenceType?: PaymentReferenceType;
+  notice?: string;
+  accountingEntry?: string;
   paymentDetails?: {
     paymentType: "domestic" | "international";
     beneficiaryIban: string;
     beneficiaryBic?: string;
+    beneficiaryAddress?: SwissAddress;
   };
   transactionDetails?: {
     destinationIban?: string;
-    shopAddress?: string;
     debitCardMaskedNumber?: string;
   };
 };

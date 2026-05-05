@@ -11,6 +11,14 @@ import {
   resetPaymentOperationDeltas,
   type PaymentOperationDelta,
 } from "@/lib/payment-cookies";
+import {
+  isValidQrrReference,
+  isValidScorReference,
+  normalizeQrrDigits,
+  normalizeScorReference,
+  type PaymentReferenceType,
+  type SwissAddress,
+} from "@/lib/swiss-qr-bill/types";
 
 type SourceRef = PaymentOperationDelta["sourceRef"];
 
@@ -85,6 +93,55 @@ function parseImmediateExecution(formData: FormData): boolean {
   return String(formData.get("immediateExecution") ?? "0").trim() === "1";
 }
 
+function trimStr(value: FormDataEntryValue | null) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function parseSwissAddress(formData: FormData): SwissAddress {
+  const street = trimStr(formData.get("beneficiaryStreet"));
+  const buildingNumber = trimStr(formData.get("beneficiaryBuildingNumber"));
+  const postalCode = trimStr(formData.get("beneficiaryPostalCode"));
+  const town = trimStr(formData.get("beneficiaryTown"));
+  const countryRaw = trimStr(formData.get("beneficiaryCountry")).toUpperCase() || "CH";
+  const country = countryRaw.length >= 2 ? countryRaw.slice(0, 2) : "";
+  if (!street || !postalCode || !town || !/^[A-Z]{2}$/.test(country)) {
+    throw new Error("Invalid beneficiary address");
+  }
+  return { street, buildingNumber, postalCode, town, country };
+}
+
+function parseReferenceType(formData: FormData): PaymentReferenceType {
+  const raw = trimStr(formData.get("referenceType")).toUpperCase();
+  if (raw === "QRR" || raw === "SCOR" || raw === "NON") {
+    return raw;
+  }
+  throw new Error("Invalid reference type");
+}
+
+function parseAndValidatePaymentReference(
+  referenceType: PaymentReferenceType,
+  rawReference: string,
+): string {
+  if (referenceType === "NON") {
+    if (rawReference.trim()) {
+      throw new Error("Reference must be empty for NON");
+    }
+    return "";
+  }
+  if (referenceType === "QRR") {
+    const digits = normalizeQrrDigits(rawReference);
+    if (!isValidQrrReference(digits)) {
+      throw new Error("Invalid QR reference");
+    }
+    return digits;
+  }
+  const scor = normalizeScorReference(rawReference);
+  if (!isValidScorReference(scor)) {
+    throw new Error("Invalid creditor reference");
+  }
+  return scor;
+}
+
 export async function confirmPayOperation(formData: FormData) {
   const sourceRef = parseSourceRef(String(formData.get("sourceRef") ?? ""));
   const paymentType = parsePaymentType(formData.get("paymentType"));
@@ -98,7 +155,9 @@ export async function confirmPayOperation(formData: FormData) {
   }
   const beneficiaryIban = parseAndValidateIban(formData.get("beneficiaryIban"));
   const beneficiaryBicRaw = String(formData.get("beneficiaryBic") ?? "").trim();
-  const reference = String(formData.get("reference") ?? "").trim();
+  const referenceType = parseReferenceType(formData);
+  const referenceRaw = String(formData.get("reference") ?? "");
+  const reference = parseAndValidatePaymentReference(referenceType, referenceRaw);
   const beneficiaryBic =
     paymentType === "international"
       ? parseAndValidateBic(beneficiaryBicRaw)
@@ -107,6 +166,9 @@ export async function confirmPayOperation(formData: FormData) {
     throw new Error("BIC must be empty for domestic payments");
   }
   const amount = parseAmount(formData.get("amount"));
+  const beneficiaryAddress = parseSwissAddress(formData);
+  const notice = trimStr(formData.get("notice"));
+  const accountingEntry = trimStr(formData.get("accountingEntry"));
 
   const operation: PaymentOperationDelta = {
     id: `op-pay-${Date.now()}`,
@@ -123,10 +185,14 @@ export async function confirmPayOperation(formData: FormData) {
     immediateExecution,
     immediateFeeChf: immediateExecution ? PAY_IMMEDIATE_FEE_CHF : undefined,
     reference,
+    referenceType,
+    notice: notice || undefined,
+    accountingEntry: accountingEntry || undefined,
     paymentDetails: {
       paymentType,
       beneficiaryIban,
       beneficiaryBic,
+      beneficiaryAddress,
     },
     transactionDetails: {
       destinationIban: beneficiaryIban,
@@ -147,7 +213,7 @@ export async function confirmTransferOperation(formData: FormData) {
   } else {
     assertExecutionDateAtLeastTomorrow(executionDate);
   }
-  const reference = String(formData.get("reference") ?? "").trim();
+  const accountingEntry = trimStr(formData.get("accountingEntry"));
   const amount = parseAmount(formData.get("amount"));
 
   const operation: PaymentOperationDelta = {
@@ -163,7 +229,9 @@ export async function confirmTransferOperation(formData: FormData) {
     currency: "CHF",
     executionDate,
     immediateExecution,
-    reference,
+    reference: "",
+    referenceType: "NON",
+    accountingEntry: accountingEntry || undefined,
   };
 
   await appendPaymentOperationDelta(operation);

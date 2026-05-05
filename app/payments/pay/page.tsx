@@ -7,8 +7,10 @@ import { Button } from "@/components/atoms/button";
 import { Container } from "@/components/atoms/container";
 import { Input } from "@/components/atoms/input";
 import { Label } from "@/components/atoms/label";
+import { BeneficiaryAddressFields } from "@/components/molecules/beneficiary-address-fields";
 import { PaymentAmountAndScheduling } from "@/components/molecules/payment-amount-and-scheduling";
 import { PayBeneficiaryFields } from "@/components/molecules/pay-beneficiary-fields";
+import { PaymentReferenceFields } from "@/components/molecules/payment-reference-fields";
 import { ProductSelect } from "@/components/molecules/product-select";
 import { SectionTitle } from "@/components/atoms/section-title";
 import { isAuthenticated } from "@/lib/auth";
@@ -18,6 +20,11 @@ import {
 } from "@/lib/payment-execution-date";
 import { getLocalizedAccountNameById } from "@/lib/i18n/account-names";
 import { getServerT } from "@/lib/i18n/server";
+import {
+  normalizeQrrDigits,
+  normalizeScorReference,
+  type PaymentReferenceType,
+} from "@/lib/swiss-qr-bill/types";
 
 type Props = {
   searchParams: Promise<{
@@ -26,10 +33,18 @@ type Props = {
     beneficiaryIban?: string;
     beneficiaryBic?: string;
     reference?: string;
+    referenceType?: string;
     recipientName?: string;
     amount?: string;
     executionDate?: string;
     immediateExecution?: string;
+    beneficiaryStreet?: string;
+    beneficiaryBuildingNumber?: string;
+    beneficiaryPostalCode?: string;
+    beneficiaryTown?: string;
+    beneficiaryCountry?: string;
+    notice?: string;
+    accountingEntry?: string;
   }>;
 };
 
@@ -37,6 +52,27 @@ const chfFormatter = new Intl.NumberFormat("de-CH", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
+
+function parseReferenceTypeFromParams(
+  raw: string | undefined,
+  reference: string,
+): PaymentReferenceType | "" {
+  const u = (raw ?? "").trim().toUpperCase();
+  if (u === "QRR" || u === "SCOR" || u === "NON") {
+    return u;
+  }
+  const r = reference.trim();
+  if (!r) {
+    return "";
+  }
+  if (normalizeScorReference(r).startsWith("RF")) {
+    return "SCOR";
+  }
+  if (normalizeQrrDigits(r).length === 27) {
+    return "QRR";
+  }
+  return "";
+}
 
 export default async function PayFormPage({ searchParams }: Props) {
   if (!(await isAuthenticated())) {
@@ -51,6 +87,10 @@ export default async function PayFormPage({ searchParams }: Props) {
   const defaultBeneficiaryIban = params.beneficiaryIban ?? "";
   const defaultBeneficiaryBic = params.beneficiaryBic ?? "";
   const defaultReference = params.reference ?? "";
+  const defaultReferenceType = parseReferenceTypeFromParams(
+    params.referenceType,
+    defaultReference,
+  );
   const defaultRecipientName = params.recipientName ?? "";
   const defaultAmount = params.amount ?? "";
   const tomorrowIso = getTomorrowLocalIso();
@@ -75,6 +115,9 @@ export default async function PayFormPage({ searchParams }: Props) {
       amountLabel: `CHF ${chfFormatter.format(card.amount)}`,
     })),
   ];
+
+  const textareaClass =
+    "box-border min-h-[88px] w-full rounded-xl border border-card-border bg-card px-3 py-2.5 text-base text-foreground shadow-inner placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring";
 
   return (
     <Container>
@@ -111,24 +154,26 @@ export default async function PayFormPage({ searchParams }: Props) {
               />
             </div>
 
+            <BeneficiaryAddressFields
+              defaults={{
+                street: params.beneficiaryStreet,
+                buildingNumber: params.beneficiaryBuildingNumber,
+                postalCode: params.beneficiaryPostalCode,
+                town: params.beneficiaryTown,
+                country: params.beneficiaryCountry,
+              }}
+            />
+
             <PayBeneficiaryFields
               defaultPaymentType={defaultPaymentType}
               defaultBeneficiaryIban={defaultBeneficiaryIban}
               defaultBeneficiaryBic={defaultBeneficiaryBic}
             />
 
-            <div className="space-y-2">
-              <Label htmlFor="reference">{t("payForm.reference")}</Label>
-              <Input
-                id="reference"
-                name="reference"
-                defaultValue={defaultReference}
-                placeholder={t("payForm.referencePlaceholder")}
-              />
-              <p className="text-sm text-muted-foreground">
-                {t("payForm.referenceExample")}
-              </p>
-            </div>
+            <PaymentReferenceFields
+              defaultReferenceType={defaultReferenceType}
+              defaultReference={defaultReference}
+            />
 
             <PaymentAmountAndScheduling
               mode="pay"
@@ -137,6 +182,32 @@ export default async function PayFormPage({ searchParams }: Props) {
               executionDefaultValue={defaultExecutionDate}
               defaultImmediate={defaultImmediate}
             />
+
+            <div className="space-y-2">
+              <Label htmlFor="notice">{t("payForm.notice")}</Label>
+              <textarea
+                id="notice"
+                name="notice"
+                rows={3}
+                defaultValue={params.notice ?? ""}
+                placeholder={t("payForm.noticePlaceholder")}
+                className={textareaClass}
+              />
+              <p className="text-xs text-muted-foreground">{t("payForm.noticeHint")}</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="accountingEntry">{t("payForm.accountingEntry")}</Label>
+              <textarea
+                id="accountingEntry"
+                name="accountingEntry"
+                rows={2}
+                defaultValue={params.accountingEntry ?? ""}
+                placeholder={t("payForm.accountingEntryPlaceholder")}
+                className={textareaClass}
+              />
+              <p className="text-xs text-muted-foreground">{t("payForm.accountingEntryPrivateNote")}</p>
+            </div>
 
             <div className="flex flex-wrap gap-3">
               <Button type="submit">{t("common.continue")}</Button>

@@ -7,6 +7,12 @@ import {
   readPaymentOperationDeltas,
   type PaymentOperationDelta,
 } from "@/lib/payment-cookies";
+import {
+  normalizeQrrDigits,
+  normalizeScorReference,
+  type PaymentReferenceType,
+  type SwissAddress,
+} from "@/lib/swiss-qr-bill/types";
 
 export type Account = {
   id: string;
@@ -39,7 +45,7 @@ type ExternalEntity = {
   type: ExternalEntityType;
   name: string;
   iban?: string;
-  address?: string;
+  address?: SwissAddress;
 };
 
 type MoneyMovementBase = {
@@ -49,8 +55,11 @@ type MoneyMovementBase = {
   destinationRef: EntityRef;
   label?: string;
   reference?: string;
+  referenceType?: PaymentReferenceType;
+  notice?: string;
+  accountingEntry?: string;
   destinationIban?: string;
-  shopAddress?: string;
+  beneficiaryAddress?: SwissAddress;
   debitCardMaskedNumber?: string;
 };
 
@@ -80,6 +89,7 @@ export type PendingOrder = {
   sourceRef: EntityRef;
   destinationRef: EntityRef;
   reference?: string;
+  referenceType?: PaymentReferenceType;
   destinationIban?: string;
 };
 
@@ -92,6 +102,7 @@ export type StandingOrder = {
   sourceRef: EntityRef;
   destinationRef: EntityRef;
   reference?: string;
+  referenceType?: PaymentReferenceType;
   destinationIban?: string;
 };
 
@@ -106,7 +117,11 @@ export type PaymentDetail =
       destinationLabel: string;
       executionDate: string;
       reference?: string;
+      referenceType?: PaymentReferenceType;
+      notice?: string;
+      accountingEntry?: string;
       destinationIban?: string;
+      beneficiaryAddress?: SwissAddress;
     }
   | {
       id: string;
@@ -119,7 +134,11 @@ export type PaymentDetail =
       cadence: string;
       nextExecutionDate: string;
       reference?: string;
+      referenceType?: PaymentReferenceType;
+      notice?: string;
+      accountingEntry?: string;
       destinationIban?: string;
+      beneficiaryAddress?: SwissAddress;
     }
   | {
       id: string;
@@ -131,8 +150,11 @@ export type PaymentDetail =
       destinationLabel: string;
       bookingDate: string;
       reference?: string;
+      referenceType?: PaymentReferenceType;
+      notice?: string;
+      accountingEntry?: string;
       destinationIban?: string;
-      shopAddress?: string;
+      beneficiaryAddress?: SwissAddress;
       debitCardMaskedNumber?: string;
       /** Included in amount; shown separately in details when present. */
       immediateExecutionFeeChf?: number;
@@ -148,14 +170,17 @@ export type ConfirmedOperation = {
   currency: "CHF";
   executionDate: string;
   reference: string;
+  referenceType?: PaymentReferenceType;
+  notice?: string;
+  accountingEntry?: string;
   paymentDetails?: {
     paymentType: "domestic" | "international";
     beneficiaryIban: string;
     beneficiaryBic?: string;
+    beneficiaryAddress?: SwissAddress;
   };
   transactionDetails?: {
     destinationIban?: string;
-    shopAddress?: string;
     debitCardMaskedNumber?: string;
   };
   immediateExecution?: boolean;
@@ -172,12 +197,58 @@ export type PastTransaction = {
   sourceRef: EntityRef;
   destinationRef: EntityRef;
   reference?: string;
+  referenceType?: PaymentReferenceType;
+  notice?: string;
+  accountingEntry?: string;
   destinationIban?: string;
-  shopAddress?: string;
+  beneficiaryAddress?: SwissAddress;
   debitCardMaskedNumber?: string;
   href?: string;
   immediateFeeChf?: number;
 };
+
+function mockAddressFromOneLine(line: string): SwissAddress {
+  const commaIdx = line.lastIndexOf(",");
+  if (commaIdx === -1) {
+    return { street: line, buildingNumber: "", postalCode: "", town: "", country: "CH" };
+  }
+  const streetPart = line.slice(0, commaIdx).trim();
+  const locality = line.slice(commaIdx + 1).trim();
+  const locMatch = locality.match(/^(\d{4})\s+(.+)$/);
+  const postalCode = locMatch?.[1] ?? "";
+  const town = locMatch?.[2] ?? locality;
+  const endNum = streetPart.match(/^(.+?)\s+(\d+[a-zA-Z]?)$/);
+  if (endNum) {
+    return {
+      street: endNum[1].trim(),
+      buildingNumber: endNum[2],
+      postalCode,
+      town,
+      country: "CH",
+    };
+  }
+  return { street: streetPart, buildingNumber: "", postalCode, town, country: "CH" };
+}
+
+function inferReferenceType(
+  reference: string | undefined,
+  explicit?: PaymentReferenceType,
+): PaymentReferenceType | undefined {
+  if (explicit) {
+    return explicit;
+  }
+  const r = (reference ?? "").trim();
+  if (!r) {
+    return undefined;
+  }
+  if (normalizeScorReference(r).startsWith("RF")) {
+    return "SCOR";
+  }
+  if (normalizeQrrDigits(r).length === 27) {
+    return "QRR";
+  }
+  return undefined;
+}
 
 export const accounts: Account[] = [
   { id: "checking", name: "Checking account", balance: 7845.2, iban: "CH93 0076 2011 6238 5295 7" },
@@ -196,52 +267,52 @@ const externalEntities: ExternalEntity[] = [
     type: "external_organization",
     name: "Regie du Lac",
     iban: "CH56 0900 0000 1234 5678 9",
-    address: "Rue du Lac 12, 1007 Lausanne",
+    address: mockAddressFromOneLine("Rue du Lac 12, 1007 Lausanne"),
   },
   {
     id: "helsana",
     type: "external_organization",
     name: "Helsana",
     iban: "CH20 0076 2011 0000 1122 3",
-    address: "Avenue de la Gare 14, 1003 Lausanne",
+    address: mockAddressFromOneLine("Avenue de la Gare 14, 1003 Lausanne"),
   },
   {
     id: "swisscom",
     type: "external_organization",
     name: "Swisscom",
     iban: "CH38 0900 0000 8765 4321 0",
-    address: "Chemin du Signal 8, 1012 Lausanne",
+    address: mockAddressFromOneLine("Chemin du Signal 8, 1012 Lausanne"),
   },
   { id: "employer", type: "external_organization", name: "Employer SA" },
   {
     id: "migros",
     type: "merchant",
     name: "Migros",
-    address: "Rue Centrale 5, 1003 Lausanne",
+    address: mockAddressFromOneLine("Rue Centrale 5, 1003 Lausanne"),
   },
   {
     id: "coop-city",
     type: "merchant",
     name: "Coop City",
-    address: "Place Saint-Francois 9, 1003 Lausanne",
+    address: mockAddressFromOneLine("Place Saint-Francois 9, 1003 Lausanne"),
   },
   {
     id: "cff",
     type: "merchant",
     name: "CFF",
-    address: "Place de la Gare 1, 1003 Lausanne",
+    address: mockAddressFromOneLine("Place de la Gare 1, 1003 Lausanne"),
   },
   {
     id: "manor",
     type: "merchant",
     name: "Manor",
-    address: "Rue Saint-Laurent 6, 1003 Lausanne",
+    address: mockAddressFromOneLine("Rue Saint-Laurent 6, 1003 Lausanne"),
   },
   {
     id: "hotel-lac",
     type: "merchant",
     name: "Hotel du Lac",
-    address: "Quai du Lac 3, 1006 Lausanne",
+    address: mockAddressFromOneLine("Quai du Lac 3, 1006 Lausanne"),
   },
 ];
 
@@ -325,7 +396,7 @@ const basePostedTransactionRecords: PostedTransactionRecord[] = [
     amount: 92.7,
     sourceRef: { entityType: "card", entityId: "visa-gold" },
     destinationRef: { entityType: "merchant", entityId: "migros" },
-    shopAddress: "Rue Centrale 5, 1003 Lausanne",
+    beneficiaryAddress: mockAddressFromOneLine("Rue Centrale 5, 1003 Lausanne"),
     debitCardMaskedNumber: "**** **** **** 4821",
   },
   {
@@ -341,7 +412,7 @@ const basePostedTransactionRecords: PostedTransactionRecord[] = [
     amount: 68.3,
     sourceRef: { entityType: "card", entityId: "mastercard-silver" },
     destinationRef: { entityType: "merchant", entityId: "manor" },
-    shopAddress: "Rue Saint-Laurent 6, 1003 Lausanne",
+    beneficiaryAddress: mockAddressFromOneLine("Rue Saint-Laurent 6, 1003 Lausanne"),
     debitCardMaskedNumber: "**** **** **** 9073",
   },
   {
@@ -350,7 +421,7 @@ const basePostedTransactionRecords: PostedTransactionRecord[] = [
     amount: 122.5,
     sourceRef: { entityType: "card", entityId: "mastercard-silver" },
     destinationRef: { entityType: "merchant", entityId: "cff" },
-    shopAddress: "Place de la Gare 1, 1003 Lausanne",
+    beneficiaryAddress: mockAddressFromOneLine("Place de la Gare 1, 1003 Lausanne"),
     debitCardMaskedNumber: "**** **** **** 9073",
   },
 ];
@@ -368,6 +439,9 @@ function toConfirmedOperation(
     currency: delta.currency,
     executionDate: delta.executionDate,
     reference: delta.reference,
+    referenceType: delta.referenceType,
+    notice: delta.notice,
+    accountingEntry: delta.accountingEntry,
     paymentDetails: delta.paymentDetails,
     transactionDetails: delta.transactionDetails,
     immediateExecution: delta.immediateExecution === true,
@@ -385,9 +459,13 @@ function toPendingRecordFromOperation(
     sourceRef: operation.sourceRef,
     destinationRef: operation.destinationRef,
     reference: operation.reference,
+    referenceType: operation.referenceType,
+    notice: operation.notice,
+    accountingEntry: operation.accountingEntry,
     destinationIban:
       operation.transactionDetails?.destinationIban ??
       operation.paymentDetails?.beneficiaryIban,
+    beneficiaryAddress: operation.paymentDetails?.beneficiaryAddress,
   };
 }
 
@@ -402,10 +480,13 @@ function toPostedRecordFromOperation(
     sourceRef: operation.sourceRef,
     destinationRef: operation.destinationRef,
     reference: operation.reference,
+    referenceType: operation.referenceType,
+    notice: operation.notice,
+    accountingEntry: operation.accountingEntry,
     destinationIban:
       operation.transactionDetails?.destinationIban ??
       operation.paymentDetails?.beneficiaryIban,
-    shopAddress: operation.transactionDetails?.shopAddress,
+    beneficiaryAddress: operation.paymentDetails?.beneficiaryAddress,
     debitCardMaskedNumber: operation.transactionDetails?.debitCardMaskedNumber,
     immediateFeeChf: operation.immediateFeeChf,
   };
@@ -466,7 +547,7 @@ function getEntityIban(ref: EntityRef) {
   return undefined;
 }
 
-function getEntityAddress(ref: EntityRef) {
+function getEntityBeneficiaryAddress(ref: EntityRef): SwissAddress | undefined {
   return externalEntities.find(
     (entity) => entity.id === ref.entityId && entity.type === ref.entityType,
   )?.address;
@@ -521,6 +602,7 @@ function toPendingOrder(
     sourceRef: record.sourceRef,
     destinationRef: record.destinationRef,
     reference: record.reference,
+    referenceType: inferReferenceType(record.reference, record.referenceType),
     destinationIban: record.destinationIban ?? getEntityIban(record.destinationRef),
   };
 }
@@ -540,6 +622,7 @@ function toStandingOrder(
     sourceRef: record.sourceRef,
     destinationRef: record.destinationRef,
     reference: record.reference,
+    referenceType: inferReferenceType(record.reference, record.referenceType),
     destinationIban: record.destinationIban ?? getEntityIban(record.destinationRef),
   };
 }
@@ -582,7 +665,12 @@ export async function getPaymentDetail(
       destinationLabel: getEntityLabel(payment.destinationRef),
       executionDate: payment.executionDate,
       reference: payment.reference,
+      referenceType: inferReferenceType(payment.reference, payment.referenceType),
+      notice: payment.notice,
+      accountingEntry: payment.accountingEntry,
       destinationIban: payment.destinationIban ?? getEntityIban(payment.destinationRef),
+      beneficiaryAddress:
+        payment.beneficiaryAddress ?? getEntityBeneficiaryAddress(payment.destinationRef),
     };
   }
 
@@ -602,7 +690,13 @@ export async function getPaymentDetail(
       cadence: standing.cadence,
       nextExecutionDate: standing.nextExecutionDate,
       reference: standing.reference,
+      referenceType: inferReferenceType(standing.reference, standing.referenceType),
+      notice: standing.notice,
+      accountingEntry: standing.accountingEntry,
       destinationIban: standing.destinationIban ?? getEntityIban(standing.destinationRef),
+      beneficiaryAddress:
+        standing.beneficiaryAddress ??
+        getEntityBeneficiaryAddress(standing.destinationRef),
     };
   }
 
@@ -625,8 +719,12 @@ export async function getPaymentDetail(
     destinationLabel: getEntityLabel(posted.destinationRef),
     bookingDate: posted.bookingDate,
     reference: posted.reference,
+    referenceType: inferReferenceType(posted.reference, posted.referenceType),
+    notice: posted.notice,
+    accountingEntry: posted.accountingEntry,
     destinationIban: posted.destinationIban ?? getEntityIban(posted.destinationRef),
-    shopAddress: posted.shopAddress ?? getEntityAddress(posted.destinationRef),
+    beneficiaryAddress:
+      posted.beneficiaryAddress ?? getEntityBeneficiaryAddress(posted.destinationRef),
     debitCardMaskedNumber: posted.debitCardMaskedNumber,
     immediateExecutionFeeChf: posted.immediateFeeChf,
   };
@@ -689,8 +787,12 @@ export async function getPastTransactionsForSource(
       sourceRef: record.sourceRef,
       destinationRef: record.destinationRef,
       reference: record.reference,
+      referenceType: inferReferenceType(record.reference, record.referenceType),
+      notice: record.notice,
+      accountingEntry: record.accountingEntry,
       destinationIban: record.destinationIban ?? getEntityIban(record.destinationRef),
-      shopAddress: record.shopAddress ?? getEntityAddress(record.destinationRef),
+      beneficiaryAddress:
+        record.beneficiaryAddress ?? getEntityBeneficiaryAddress(record.destinationRef),
       debitCardMaskedNumber: record.debitCardMaskedNumber,
       immediateFeeChf: record.immediateFeeChf,
       href: `/payments/posted/${encodeURIComponent(record.id)}`,

@@ -8,6 +8,7 @@ import Link from "next/link";
 import type { TFunction } from "i18next";
 import type { PastTransaction } from "@/data/banking-mock";
 import { getServerT } from "@/lib/i18n/server";
+import { formatSwissAddressOneLine } from "@/lib/swiss-qr-bill/types";
 
 type Props = {
   transactions: PastTransaction[];
@@ -53,8 +54,13 @@ function getTransactionMeta(transaction: PastTransaction, t: TFunction) {
   if (transaction.reference) {
     parts.push(t("pastTransactions.reference", { value: transaction.reference }));
   }
-  if (transaction.shopAddress) {
-    parts.push(transaction.shopAddress);
+  if (
+    transaction.beneficiaryAddress &&
+    (transaction.beneficiaryAddress.street ||
+      transaction.beneficiaryAddress.town ||
+      transaction.beneficiaryAddress.postalCode)
+  ) {
+    parts.push(formatSwissAddressOneLine(transaction.beneficiaryAddress));
   }
   if (transaction.debitCardMaskedNumber) {
     parts.push(t("pastTransactions.card", { value: transaction.debitCardMaskedNumber }));

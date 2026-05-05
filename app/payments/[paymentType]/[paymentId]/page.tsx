@@ -7,6 +7,7 @@ import { getPaymentDetail } from "@/data/banking-mock";
 import { isAuthenticated } from "@/lib/auth";
 import { getLocalizedAccountNameById } from "@/lib/i18n/account-names";
 import { getServerT } from "@/lib/i18n/server";
+import { formatSwissAddressLines } from "@/lib/swiss-qr-bill/types";
 
 type Props = {
   params: Promise<{
@@ -53,6 +54,14 @@ export default async function PaymentDetailPage({ params }: Props) {
   const destinationLabel = destinationAccount
     ? getLocalizedAccountNameById(destinationAccount.id, t, payment.destinationLabel)
     : payment.destinationLabel;
+
+  const addressLines =
+    payment.beneficiaryAddress &&
+    (payment.beneficiaryAddress.street ||
+      payment.beneficiaryAddress.town ||
+      payment.beneficiaryAddress.postalCode)
+      ? formatSwissAddressLines(payment.beneficiaryAddress).join("\n")
+      : "";
 
   return (
     <Container>
@@ -126,16 +135,38 @@ export default async function PaymentDetailPage({ params }: Props) {
                 <dd className="font-medium">{payment.destinationIban}</dd>
               </div>
             ) : null}
-            {payment.reference ? (
+            {addressLines ? (
+              <div className="sm:col-span-2">
+                <dt className="text-sm text-muted-foreground">{t("paymentDetail.address")}</dt>
+                <dd className="font-medium whitespace-pre-line">{addressLines}</dd>
+              </div>
+            ) : null}
+            {payment.referenceType === "QRR" && payment.reference ? (
+              <div>
+                <dt className="text-sm text-muted-foreground">{t("paymentDetail.referenceQrr")}</dt>
+                <dd className="font-medium">{payment.reference}</dd>
+              </div>
+            ) : payment.referenceType === "SCOR" && payment.reference ? (
+              <div>
+                <dt className="text-sm text-muted-foreground">{t("paymentDetail.referenceScor")}</dt>
+                <dd className="font-medium">{payment.reference}</dd>
+              </div>
+            ) : payment.reference ? (
               <div>
                 <dt className="text-sm text-muted-foreground">{t("paymentDetail.reference")}</dt>
                 <dd className="font-medium">{payment.reference}</dd>
               </div>
             ) : null}
-            {payment.paymentType === "posted" && payment.shopAddress ? (
-              <div>
-                <dt className="text-sm text-muted-foreground">{t("paymentDetail.shopAddress")}</dt>
-                <dd className="font-medium">{payment.shopAddress}</dd>
+            {payment.notice ? (
+              <div className="sm:col-span-2">
+                <dt className="text-sm text-muted-foreground">{t("paymentDetail.notice")}</dt>
+                <dd className="font-medium whitespace-pre-wrap">{payment.notice}</dd>
+              </div>
+            ) : null}
+            {payment.accountingEntry ? (
+              <div className="sm:col-span-2">
+                <dt className="text-sm text-muted-foreground">{t("paymentDetail.accountingEntry")}</dt>
+                <dd className="font-medium whitespace-pre-wrap">{payment.accountingEntry}</dd>
               </div>
             ) : null}
             {payment.paymentType === "posted" && payment.debitCardMaskedNumber ? (

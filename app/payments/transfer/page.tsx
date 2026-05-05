@@ -16,7 +16,11 @@ import { getLocalizedAccountNameById } from "@/lib/i18n/account-names";
 import { getServerT } from "@/lib/i18n/server";
 
 type Props = {
-  searchParams: Promise<{ source?: string; immediateExecution?: string }>;
+  searchParams: Promise<{
+    source?: string;
+    immediateExecution?: string;
+    accountingEntry?: string;
+  }>;
 };
 
 const chfFormatter = new Intl.NumberFormat("de-CH", {
@@ -32,6 +36,7 @@ export default async function TransferFormPage({ searchParams }: Props) {
 
   const params = await searchParams;
   const defaultSource = params.source ?? "";
+  const defaultAccountingEntry = params.accountingEntry ?? "";
   const tomorrowIso = getTomorrowLocalIso();
   const defaultImmediate = params.immediateExecution !== "0";
   const accounts = await getAccountsWithLiveBalances();
@@ -100,8 +105,13 @@ export default async function TransferFormPage({ searchParams }: Props) {
             />
 
             <div className="space-y-2">
-              <Label htmlFor="reference">{t("transferForm.note")}</Label>
-              <Input id="reference" name="reference" placeholder={t("transferForm.notePlaceholder")} />
+              <Label htmlFor="accountingEntry">{t("transferForm.accountingEntry")}</Label>
+              <Input
+                id="accountingEntry"
+                name="accountingEntry"
+                defaultValue={defaultAccountingEntry}
+                placeholder={t("transferForm.accountingEntryPlaceholder")}
+              />
             </div>
 
             <div className="flex flex-wrap gap-3">

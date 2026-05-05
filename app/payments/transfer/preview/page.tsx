@@ -16,7 +16,7 @@ type Props = {
     destinationAccountId?: string;
     amount?: string;
     executionDate?: string;
-    reference?: string;
+    accountingEntry?: string;
     immediateExecution?: string;
   }>;
 };
@@ -36,7 +36,7 @@ export default async function TransferPreviewPage({ searchParams }: Props) {
   const destinationAccountId = required(params.destinationAccountId);
   const amount = required(params.amount);
   const executionDate = required(params.executionDate);
-  const reference = required(params.reference);
+  const accountingEntry = required(params.accountingEntry);
   const immediateExecution = params.immediateExecution !== "0";
   const sourceLabel = (() => {
     const [entityType, entityId] = sourceRef.split(":", 2);
@@ -68,6 +68,13 @@ export default async function TransferPreviewPage({ searchParams }: Props) {
 
   if (!immediateExecution && !isExecutionDateAtLeastTomorrow(executionDate)) {
     redirect("/payments/transfer");
+  }
+
+  const backParams = new URLSearchParams();
+  backParams.set("source", sourceRef);
+  backParams.set("immediateExecution", immediateExecution ? "1" : "0");
+  if (accountingEntry) {
+    backParams.set("accountingEntry", accountingEntry);
   }
 
   return (
@@ -109,8 +116,8 @@ export default async function TransferPreviewPage({ searchParams }: Props) {
               </dd>
             </div>
             <div>
-              <dt className="text-sm text-muted-foreground">{t("transferPreview.note")}</dt>
-              <dd className="font-medium">{reference || "-"}</dd>
+              <dt className="text-sm text-muted-foreground">{t("transferPreview.accountingEntry")}</dt>
+              <dd className="font-medium">{accountingEntry || "—"}</dd>
             </div>
           </dl>
 
@@ -119,7 +126,7 @@ export default async function TransferPreviewPage({ searchParams }: Props) {
             <input type="hidden" name="destinationAccountId" value={destinationAccountId} />
             <input type="hidden" name="amount" value={amount} />
             <input type="hidden" name="executionDate" value={executionDate} />
-            <input type="hidden" name="reference" value={reference} />
+            <input type="hidden" name="accountingEntry" value={accountingEntry} />
             <input
               type="hidden"
               name="immediateExecution"
@@ -127,7 +134,7 @@ export default async function TransferPreviewPage({ searchParams }: Props) {
             />
             <Button type="submit">{t("transferPreview.makeTransfer")}</Button>
             <Link
-              href={`/payments/transfer?source=${encodeURIComponent(sourceRef)}&immediateExecution=${immediateExecution ? "1" : "0"}`}
+              href={`/payments/transfer?${backParams.toString()}`}
               className="inline-flex min-h-11 items-center justify-center rounded-full border border-card-border bg-muted px-5 py-2.5 text-base font-medium text-foreground"
             >
               {t("common.backToEdit")}
