@@ -42,12 +42,14 @@ function creditorAddressFromBlock(block: string[]): SwissAddress {
   if (type === "K" || type === "F") {
     const line1 = (block[2] ?? "").trim();
     const line2 = (block[3] ?? "").trim();
-    const street = [line1, line2].filter(Boolean).join(", ");
+    const streetWithOptionalNumberMatch = line1.match(/^(.+?)\s+(\d+[a-zA-Z]?)$/);
+    const locality = line2.match(/^(\d{4})\s+(.+)$/);
     return {
-      street,
-      buildingNumber: "",
-      postalCode: (block[4] ?? "").trim(),
-      town: (block[5] ?? "").trim(),
+      street: streetWithOptionalNumberMatch?.[1]?.trim() ?? line1,
+      buildingNumber: streetWithOptionalNumberMatch?.[2] ?? "",
+      // K/F address type stores locality in address line 2 (not in dedicated postal/town fields).
+      postalCode: locality?.[1] ?? (block[4] ?? "").trim(),
+      town: locality?.[2] ?? (block[5] ?? "").trim(),
       country,
     };
   }

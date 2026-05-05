@@ -127,6 +127,7 @@ export default async function PayPreviewPage({ searchParams }: Props) {
   const notice = required(params.notice);
   const accountingEntry = required(params.accountingEntry);
   const address = parseAddress(params);
+  const backQuery = payFormQuery(params);
 
   const isDomestic = paymentType === "domestic";
   const isInternational = paymentType === "international";
@@ -158,32 +159,31 @@ export default async function PayPreviewPage({ searchParams }: Props) {
     (isInternational && !beneficiaryBic) ||
     !address
   ) {
-    redirect("/payments/pay");
+    redirect(`/payments/pay?${backQuery}`);
   }
 
   if (referenceType === "QRR") {
     const digits = normalizeQrrDigits(reference);
     if (!isValidQrrReference(digits)) {
-      redirect("/payments/pay");
+      redirect(`/payments/pay?${backQuery}`);
     }
   } else if (referenceType === "SCOR") {
     const scor = normalizeScorReference(reference);
     if (!isValidScorReference(scor)) {
-      redirect("/payments/pay");
+      redirect(`/payments/pay?${backQuery}`);
     }
   } else if (referenceType === "NON" && reference) {
-    redirect("/payments/pay");
+    redirect(`/payments/pay?${backQuery}`);
   }
 
   if (!immediateExecution && !isExecutionDateAtLeastTomorrow(executionDate)) {
-    redirect("/payments/pay");
+    redirect(`/payments/pay?${backQuery}`);
   }
 
   const amountNum = Number(amount);
   const immediateFee = immediateExecution ? PAY_IMMEDIATE_FEE_CHF : 0;
   const totalChf = amountNum + immediateFee;
   const addressLines = formatSwissAddressLines(address);
-  const backQuery = payFormQuery(params);
 
   return (
     <Container>
