@@ -1,5 +1,8 @@
 import { redirect } from "next/navigation";
-import { accounts, creditCards } from "@/data/banking-mock";
+import {
+  creditCards,
+  getAccountsWithLiveBalances,
+} from "@/data/banking-mock";
 import { Button } from "@/components/atoms/button";
 import { Container } from "@/components/atoms/container";
 import { Input } from "@/components/atoms/input";
@@ -57,6 +60,7 @@ export default async function PayFormPage({ searchParams }: Props) {
       ? rawExecutionDate
       : tomorrowIso;
   const defaultImmediate = params.immediateExecution === "1";
+  const accounts = await getAccountsWithLiveBalances();
   const sourceOptions = [
     ...accounts.map((account) => ({
       value: `account:${account.id}`,

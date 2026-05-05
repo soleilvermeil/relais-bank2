@@ -697,6 +697,29 @@ export async function getPastTransactionsForSource(
     }));
 }
 
+export async function getAccountsWithLiveBalances(): Promise<Account[]> {
+  const operations = await getConfirmedOperationState();
+  const postedOperations = userOperationsPosted(operations);
+  const deltasByAccount = new Map<string, number>();
+
+  for (const operation of postedOperations) {
+    const totalAmount = operation.amount + (operation.immediateFeeChf ?? 0);
+    if (operation.sourceRef.entityType === "account") {
+      const current = deltasByAccount.get(operation.sourceRef.entityId) ?? 0;
+      deltasByAccount.set(operation.sourceRef.entityId, current - totalAmount);
+    }
+    if (operation.destinationRef.entityType === "account") {
+      const current = deltasByAccount.get(operation.destinationRef.entityId) ?? 0;
+      deltasByAccount.set(operation.destinationRef.entityId, current + operation.amount);
+    }
+  }
+
+  return accounts.map((account) => ({
+    ...account,
+    balance: account.balance + (deltasByAccount.get(account.id) ?? 0),
+  }));
+}
+
 export async function getConfirmedOperations() {
   return getConfirmedOperationState();
 }

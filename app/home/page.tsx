@@ -3,7 +3,7 @@ import { Badge } from "@/components/atoms/badge";
 import { Container } from "@/components/atoms/container";
 import { SectionTitle } from "@/components/atoms/section-title";
 import { ListItemCard } from "@/components/molecules/list-item-card";
-import { accounts, creditCards } from "@/data/banking-mock";
+import { creditCards, getAccountsWithLiveBalances } from "@/data/banking-mock";
 import { isAuthenticated } from "@/lib/auth";
 import { getLocalizedAccountNameById } from "@/lib/i18n/account-names";
 import { getServerT } from "@/lib/i18n/server";
@@ -13,6 +13,7 @@ export default async function HomePage() {
     redirect("/login");
   }
   const { t } = await getServerT();
+  const accounts = await getAccountsWithLiveBalances();
 
   return (
     <Container>
