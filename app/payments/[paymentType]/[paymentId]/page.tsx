@@ -5,6 +5,7 @@ import { SectionTitle } from "@/components/atoms/section-title";
 import { accounts } from "@/data/banking-mock";
 import { getPaymentDetail } from "@/data/banking-mock";
 import { isAuthenticated } from "@/lib/auth";
+import { parseExecutionDate, formatSwissLocalDate } from "@/lib/payment-execution-date";
 import { getLocalizedAccountNameById } from "@/lib/i18n/account-names";
 import { getServerT } from "@/lib/i18n/server";
 import { formatSwissAddressLines } from "@/lib/swiss-qr-bill/types";
@@ -20,6 +21,11 @@ const chfFormatter = new Intl.NumberFormat("de-CH", {
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
 });
+
+function formatDetailDate(value: string) {
+  const d = parseExecutionDate(value);
+  return d ? formatSwissLocalDate(d) : value;
+}
 
 export default async function PaymentDetailPage({ params }: Props) {
   if (!(await isAuthenticated())) {
@@ -62,6 +68,15 @@ export default async function PaymentDetailPage({ params }: Props) {
       payment.beneficiaryAddress.postalCode)
       ? formatSwissAddressLines(payment.beneficiaryAddress).join("\n")
       : "";
+
+  const debtor = payment.ultimateDebtor;
+  const debtorLines =
+    debtor &&
+    formatSwissAddressLines(debtor.address).filter(Boolean).length > 0
+      ? `${debtor.name}\n${formatSwissAddressLines(debtor.address).join("\n")}`
+      : debtor
+        ? `${debtor.name}\n${formatSwissAddressLines(debtor.address).join("\n")}`
+        : "";
 
   return (
     <Container>
@@ -141,6 +156,12 @@ export default async function PaymentDetailPage({ params }: Props) {
                 <dd className="font-medium whitespace-pre-line">{addressLines}</dd>
               </div>
             ) : null}
+            {debtorLines ? (
+              <div className="sm:col-span-2">
+                <dt className="text-sm text-muted-foreground">{t("paymentDetail.debtor")}</dt>
+                <dd className="font-medium whitespace-pre-line">{debtorLines}</dd>
+              </div>
+            ) : null}
             {payment.referenceType === "QRR" && payment.reference ? (
               <div>
                 <dt className="text-sm text-muted-foreground">{t("paymentDetail.referenceQrr")}</dt>
@@ -178,24 +199,44 @@ export default async function PaymentDetailPage({ params }: Props) {
             {payment.paymentType === "pending" ? (
               <div>
                 <dt className="text-sm text-muted-foreground">{t("common.executionDate")}</dt>
-                <dd className="font-medium">{payment.executionDate}</dd>
+                <dd className="font-medium">{formatDetailDate(payment.executionDate)}</dd>
               </div>
             ) : payment.paymentType === "posted" ? (
               <div>
                 <dt className="text-sm text-muted-foreground">{t("paymentDetail.bookingDate")}</dt>
-                <dd className="font-medium">{payment.bookingDate}</dd>
+                <dd className="font-medium">{formatDetailDate(payment.bookingDate)}</dd>
               </div>
             ) : (
               <>
                 <div>
-                  <dt className="text-sm text-muted-foreground">{t("paymentDetail.cadence")}</dt>
-                  <dd className="font-medium">
-                    {payment.cadence === "Monthly" ? t("cadence.monthly") : payment.cadence}
-                  </dd>
+                  <dt className="text-sm text-muted-foreground">{t("paymentDetail.frequency")}</dt>
+                  <dd className="font-medium">{t(`cadence.${payment.frequency}`)}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-muted-foreground">
+                    {t("paymentDetail.firstExecutionDate")}
+                  </dt>
+                  <dd className="font-medium">{formatDetailDate(payment.firstExecutionDate)}</dd>
                 </div>
                 <div>
                   <dt className="text-sm text-muted-foreground">{t("paymentDetail.nextExecutionDate")}</dt>
-                  <dd className="font-medium">{payment.nextExecutionDate}</dd>
+                  <dd className="font-medium">{formatDetailDate(payment.nextExecutionDate)}</dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-muted-foreground">{t("paymentDetail.holidayShift")}</dt>
+                  <dd className="font-medium">
+                    {payment.holidayShift === "before"
+                      ? t("payForm.paymentSchedule.holidayShiftBefore")
+                      : t("payForm.paymentSchedule.holidayShiftAfter")}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-sm text-muted-foreground">{t("paymentDetail.endDate")}</dt>
+                  <dd className="font-medium">
+                    {payment.endDate?.trim()
+                      ? formatDetailDate(payment.endDate)
+                      : t("paymentDetail.unlimited")}
+                  </dd>
                 </div>
               </>
             )}

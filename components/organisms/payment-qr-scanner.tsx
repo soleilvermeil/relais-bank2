@@ -49,7 +49,7 @@ export function PaymentQrScanner({ defaultSourceRef }: Props) {
         source: defaultSourceRef,
         sourceRef: defaultSourceRef,
         recipientName: parsed.recipientName,
-        paymentType: parsed.paymentType,
+        paymentSchedule: "one_time",
         beneficiaryIban: parsed.beneficiaryIban,
         beneficiaryBic: parsed.beneficiaryBic,
         referenceType: ref.type,

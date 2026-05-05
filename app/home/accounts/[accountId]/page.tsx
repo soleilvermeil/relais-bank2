@@ -68,10 +68,18 @@ export default async function AccountDetailPage({ params }: Props) {
               pendingOrders.map((order) => (
                 <ListItemCard
                   key={order.id}
-                  href={`/payments/pending/${encodeURIComponent(order.id)}`}
+                  href={order.href}
                   name={order.label}
-                  metaLabel={t("common.executionDate")}
-                  metaValue={order.executionDate}
+                  metaLabel={
+                    order.scheduleType === "standing"
+                      ? t("paymentDetail.standingOrder")
+                      : t("paymentDetail.pendingOrder")
+                  }
+                  metaValue={
+                    order.scheduleType === "standing" && "frequency" in order
+                      ? `${order.executionDate} · ${t(`cadence.${order.frequency}`)}`
+                      : order.executionDate
+                  }
                   amount={order.amount}
                   sign={
                     order.destinationRef.entityType === "account" &&

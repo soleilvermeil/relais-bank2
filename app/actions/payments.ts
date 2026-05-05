@@ -1,9 +1,17 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import type {
+  HolidayShift,
+  StandingFrequency,
+  StandingOrderSchedule,
+  UltimateDebtor,
+} from "@/data/banking/types";
 import {
   assertExecutionDateAtLeastTomorrow,
   formatSwissLocalDate,
+  isExecutionDateAtLeastTomorrow,
+  parseExecutionDate,
 } from "@/lib/payment-execution-date";
 import { PAY_IMMEDIATE_FEE_CHF } from "@/lib/payment-immediate";
 import {
@@ -22,13 +30,13 @@ import {
 
 type SourceRef = PaymentOperationDelta["sourceRef"];
 
-function parsePaymentType(value: FormDataEntryValue | null) {
-  const raw = typeof value === "string" ? value.trim().toLowerCase() : "";
-  if (raw !== "domestic" && raw !== "international") {
-    throw new Error("Invalid payment type");
-  }
-  return raw;
-}
+const STANDING_FREQUENCIES: StandingFrequency[] = [
+  "weekly",
+  "monthly",
+  "quarterly",
+  "semiAnnual",
+  "yearly",
+];
 
 function normalizeIban(value: FormDataEntryValue | null) {
   return (typeof value === "string" ? value : "").replace(/\s+/g, "").toUpperCase();
@@ -59,10 +67,13 @@ function parseAndValidateIban(value: FormDataEntryValue | null) {
   return iban;
 }
 
-function parseAndValidateBic(value: FormDataEntryValue | null) {
+function parseAndValidateBicOptional(value: FormDataEntryValue | null) {
   const bic = (typeof value === "string" ? value : "")
     .replace(/\s+/g, "")
     .toUpperCase();
+  if (!bic) {
+    return undefined;
+  }
   if (!/^[A-Z]{6}[A-Z2-9][A-NP-Z0-9]([A-Z0-9]{3})?$/.test(bic)) {
     throw new Error("Invalid BIC");
   }
@@ -104,7 +115,7 @@ function parseSwissAddress(formData: FormData): SwissAddress {
   const town = trimStr(formData.get("beneficiaryTown"));
   const countryRaw = trimStr(formData.get("beneficiaryCountry")).toUpperCase() || "CH";
   const country = countryRaw.length >= 2 ? countryRaw.slice(0, 2) : "";
-  if (!street || !postalCode || !town || !/^[A-Z]{2}$/.test(country)) {
+  if (!postalCode || !town || !/^[A-Z]{2}$/.test(country)) {
     throw new Error("Invalid beneficiary address");
   }
   return { street, buildingNumber, postalCode, town, country };
@@ -142,33 +153,103 @@ function parseAndValidatePaymentReference(
   return scor;
 }
 
+function parsePaymentSchedule(formData: FormData): "one_time" | "standing" {
+  const raw = trimStr(formData.get("paymentSchedule")).toLowerCase();
+  return raw === "standing" ? "standing" : "one_time";
+}
+
+function parseStandingSchedule(formData: FormData): StandingOrderSchedule {
+  const firstExecutionDate = trimStr(formData.get("standingFirstExecutionDate"));
+  if (!firstExecutionDate || !isExecutionDateAtLeastTomorrow(firstExecutionDate)) {
+    throw new Error("Invalid first execution date");
+  }
+  const frequencyRaw = trimStr(formData.get("standingFrequency")).toLowerCase();
+  if (!STANDING_FREQUENCIES.includes(frequencyRaw as StandingFrequency)) {
+    throw new Error("Invalid standing frequency");
+  }
+  const frequency = frequencyRaw as StandingFrequency;
+  const shiftRaw = trimStr(formData.get("standingHolidayShift")).toLowerCase();
+  if (shiftRaw !== "before" && shiftRaw !== "after") {
+    throw new Error("Invalid holiday shift");
+  }
+  const holidayShift: HolidayShift = shiftRaw;
+  const hasEnd = trimStr(formData.get("standingHasEnd")) === "1";
+  let endDate: string | undefined;
+  if (hasEnd) {
+    endDate = trimStr(formData.get("standingEndDate"));
+    if (!endDate) {
+      throw new Error("End date required");
+    }
+    const first = parseExecutionDate(firstExecutionDate);
+    const end = parseExecutionDate(endDate);
+    if (!first || !end || end.getTime() < first.getTime()) {
+      throw new Error("Invalid end date");
+    }
+  }
+  return {
+    firstExecutionDate,
+    nextExecutionDate: firstExecutionDate,
+    frequency,
+    holidayShift,
+    endDate: endDate || undefined,
+  };
+}
+
+function parseUltimateDebtor(formData: FormData): UltimateDebtor | undefined {
+  if (trimStr(formData.get("hasUltimateDebtor")) !== "1") {
+    return undefined;
+  }
+  const name = trimStr(formData.get("debtorName"));
+  const countryRaw = trimStr(formData.get("debtorCountry")).toUpperCase() || "CH";
+  const country = countryRaw.length >= 2 ? countryRaw.slice(0, 2) : "";
+  const town = trimStr(formData.get("debtorTown"));
+  const postalCode = trimStr(formData.get("debtorPostalCode"));
+  const street = trimStr(formData.get("debtorStreet"));
+  const buildingNumber = trimStr(formData.get("debtorBuildingNumber"));
+  if (!name || !town || !postalCode || !/^[A-Z]{2}$/.test(country)) {
+    throw new Error("Invalid ultimate debtor");
+  }
+  return {
+    name,
+    address: { street, buildingNumber, postalCode, town, country },
+  };
+}
+
 export async function confirmPayOperation(formData: FormData) {
   const sourceRef = parseSourceRef(String(formData.get("sourceRef") ?? ""));
-  const paymentType = parsePaymentType(formData.get("paymentType"));
   const recipientName = String(formData.get("recipientName") ?? "").trim();
-  const immediateExecution = parseImmediateExecution(formData);
-  let executionDate = String(formData.get("executionDate") ?? "").trim();
-  if (immediateExecution) {
-    executionDate = formatSwissLocalDate(new Date());
-  } else {
-    assertExecutionDateAtLeastTomorrow(executionDate);
-  }
+  const paymentSchedule = parsePaymentSchedule(formData);
   const beneficiaryIban = parseAndValidateIban(formData.get("beneficiaryIban"));
-  const beneficiaryBicRaw = String(formData.get("beneficiaryBic") ?? "").trim();
+  const beneficiaryBic = parseAndValidateBicOptional(formData.get("beneficiaryBic"));
   const referenceType = parseReferenceType(formData);
   const referenceRaw = String(formData.get("reference") ?? "");
   const reference = parseAndValidatePaymentReference(referenceType, referenceRaw);
-  const beneficiaryBic =
-    paymentType === "international"
-      ? parseAndValidateBic(beneficiaryBicRaw)
-      : undefined;
-  if (paymentType === "domestic" && beneficiaryBicRaw) {
-    throw new Error("BIC must be empty for domestic payments");
-  }
   const amount = parseAmount(formData.get("amount"));
   const beneficiaryAddress = parseSwissAddress(formData);
   const notice = trimStr(formData.get("notice"));
   const accountingEntry = trimStr(formData.get("accountingEntry"));
+  const ultimateDebtor = parseUltimateDebtor(formData);
+
+  let executionDate: string;
+  let immediateExecution: boolean;
+  let immediateFeeChf: number | undefined;
+  let standing: StandingOrderSchedule | undefined;
+
+  if (paymentSchedule === "standing") {
+    standing = parseStandingSchedule(formData);
+    executionDate = standing.firstExecutionDate;
+    immediateExecution = false;
+    immediateFeeChf = undefined;
+  } else {
+    immediateExecution = parseImmediateExecution(formData);
+    executionDate = String(formData.get("executionDate") ?? "").trim();
+    if (immediateExecution) {
+      executionDate = formatSwissLocalDate(new Date());
+    } else {
+      assertExecutionDateAtLeastTomorrow(executionDate);
+    }
+    immediateFeeChf = immediateExecution ? PAY_IMMEDIATE_FEE_CHF : undefined;
+  }
 
   const operation: PaymentOperationDelta = {
     id: `op-pay-${Date.now()}`,
@@ -183,13 +264,15 @@ export async function confirmPayOperation(formData: FormData) {
     currency: "CHF",
     executionDate,
     immediateExecution,
-    immediateFeeChf: immediateExecution ? PAY_IMMEDIATE_FEE_CHF : undefined,
+    immediateFeeChf,
     reference,
     referenceType,
     notice: notice || undefined,
     accountingEntry: accountingEntry || undefined,
+    paymentSchedule,
+    standing,
+    ultimateDebtor,
     paymentDetails: {
-      paymentType,
       beneficiaryIban,
       beneficiaryBic,
       beneficiaryAddress,
@@ -206,15 +289,27 @@ export async function confirmPayOperation(formData: FormData) {
 export async function confirmTransferOperation(formData: FormData) {
   const sourceRef = parseSourceRef(String(formData.get("sourceRef") ?? ""));
   const destinationAccountId = String(formData.get("destinationAccountId") ?? "").trim();
-  const immediateExecution = parseImmediateExecution(formData);
-  let executionDate = String(formData.get("executionDate") ?? "").trim();
-  if (immediateExecution) {
-    executionDate = formatSwissLocalDate(new Date());
-  } else {
-    assertExecutionDateAtLeastTomorrow(executionDate);
-  }
+  const paymentSchedule = parsePaymentSchedule(formData);
   const accountingEntry = trimStr(formData.get("accountingEntry"));
   const amount = parseAmount(formData.get("amount"));
+
+  let executionDate: string;
+  let immediateExecution: boolean;
+  let standing: StandingOrderSchedule | undefined;
+
+  if (paymentSchedule === "standing") {
+    standing = parseStandingSchedule(formData);
+    executionDate = standing.firstExecutionDate;
+    immediateExecution = false;
+  } else {
+    immediateExecution = parseImmediateExecution(formData);
+    executionDate = String(formData.get("executionDate") ?? "").trim();
+    if (immediateExecution) {
+      executionDate = formatSwissLocalDate(new Date());
+    } else {
+      assertExecutionDateAtLeastTomorrow(executionDate);
+    }
+  }
 
   const operation: PaymentOperationDelta = {
     id: `op-transfer-${Date.now()}`,
@@ -229,6 +324,8 @@ export async function confirmTransferOperation(formData: FormData) {
     currency: "CHF",
     executionDate,
     immediateExecution,
+    paymentSchedule,
+    standing,
     reference: "",
     referenceType: "NON",
     accountingEntry: accountingEntry || undefined,

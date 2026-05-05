@@ -184,8 +184,8 @@ export default async function PaymentsPage() {
                       )
                     : order.label
                 }
-                metaLabel={t("paymentsPage.monthlyNextExecution", {
-                  cadence: order.cadence === "Monthly" ? t("cadence.monthly") : order.cadence,
+                metaLabel={t("paymentsPage.standingNextExecution", {
+                  frequency: t(`cadence.${order.frequency}`),
                 })}
                 metaValue={order.nextExecutionDate}
                 amount={order.amount}

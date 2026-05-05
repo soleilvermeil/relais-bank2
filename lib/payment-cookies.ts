@@ -1,4 +1,8 @@
 import { cookies } from "next/headers";
+import type {
+  StandingOrderSchedule,
+  UltimateDebtor,
+} from "@/data/banking/types";
 import type { PaymentReferenceType, SwissAddress } from "@/lib/swiss-qr-bill/types";
 
 export type { PaymentReferenceType } from "@/lib/swiss-qr-bill/types";
@@ -29,8 +33,13 @@ export type PaymentOperationDelta = {
   referenceType?: PaymentReferenceType;
   notice?: string;
   accountingEntry?: string;
+  /** Defaults to one_time when missing (legacy cookies). */
+  paymentSchedule?: "one_time" | "standing";
+  standing?: StandingOrderSchedule;
+  ultimateDebtor?: UltimateDebtor;
   paymentDetails?: {
-    paymentType: "domestic" | "international";
+    /** Legacy cookies may include paymentType; ignored by new code. */
+    paymentType?: "domestic" | "international";
     beneficiaryIban: string;
     beneficiaryBic?: string;
     beneficiaryAddress?: SwissAddress;
